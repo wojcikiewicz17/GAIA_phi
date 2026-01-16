@@ -1,0 +1,4 @@
+user_id: 101 action: login status: success
+user_id: 102 action: purchase item: gpu
+system_log: error memory overflow
+neural_net: activation layer 4
