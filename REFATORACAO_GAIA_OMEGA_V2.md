@@ -3,7 +3,7 @@
 ## 1. Nova arquitetura (texto + árvore)
 
 ### Objetivo
-Separar de forma rígida: CORE determinístico (C-like), orquestração Python, e experimentos Rafaelia. Cada camada tem contratos explícitos e versões rastreáveis.
+Separar de forma rígida: CORE determinístico (C-like), orquestração Python e experimentos Rafaelia. Cada camada tem contratos explícitos, versões rastreáveis e superfície pequena (auditoria). O core é projetado para implementação enxuta (~50KB de C), sem dependências externas, com hashing e vetores como primeira classe.
 
 ### Árvore proposta
 ```
@@ -143,6 +143,12 @@ Separar de forma rígida: CORE determinístico (C-like), orquestração Python, 
 - gaia_zipraf: camadas semanticamente versionadas com CRC.
 - gaia_log: log encadeado com integridade.
 
+### Contratos de performance e segurança
+- Todas as funções retornam códigos de erro explícitos (sem exceptions).
+- Estado alocado/estado inicializado é separado (init/close).
+- I/O é isolado em storage (nexus, vecdb, zipraf); cálculo puro fica em vector/hash/metric/projection.
+- Estruturas de dados padronizam endianness e alinhamento.
+
 ## 4. Interfaces-chave (pseudocódigo/headers)
 
 ### gaia_vector.h
@@ -159,6 +165,7 @@ void gaia_vector_free(GaiaVector *v);
 int gaia_vector_resize(GaiaVector *v, uint32_t dim);
 float gaia_vector_dot(const GaiaVector *a, const GaiaVector *b);
 int gaia_vector_normalize(GaiaVector *v);
+int gaia_vector_project_hash(GaiaVector *v, uint64_t hash);
 ```
 
 ### gaia_hash.h
@@ -217,6 +224,12 @@ int gaia_vecdb_insert(GaiaVecDB *db, const GaiaVector *v, uint64_t id);
 int gaia_vecdb_query(GaiaVecDB *db, const GaiaVector *query,
                      uint64_t *out_ids, float *out_scores, size_t limit);
 void gaia_vecdb_close(GaiaVecDB *db);
+
+typedef struct {
+    uint32_t dim;
+    uint32_t quant_bits;
+    uint64_t count;
+} GaiaVecDBHeader;
 ```
 
 ### gaia_zipraf.h
@@ -228,6 +241,7 @@ typedef struct {
 
 int gaia_zipraf_open_layer(const char *path, GaiaZipRafLayerSpec spec);
 int gaia_zipraf_append(const char *path, const void *record, size_t len);
+int gaia_zipraf_seal(const char *path);
 ```
 
 ### raf_engine.h
@@ -253,6 +267,7 @@ int raf_engine_execute(const char *name, const void *input, void *output);
 7. Migrar scripts Python para gaia-orchestrator com módulos ingest/memory/query/visualize.
 8. Unificar build em gaia-tools/build com targets reprodutíveis.
 9. Remover duplicações antigas e manter um mapa de compatibilidade por 1 versão.
+10. Criar testes mínimos (hash/vector/nexus/vecdb) e bloquear regressões com execução local.
 
 ## 6. Como supera LLaMA conceitualmente
 
@@ -261,6 +276,7 @@ int raf_engine_execute(const char *name, const void *input, void *output);
 - Memória persistente e atenção linear são explícitas e rastreáveis.
 - Permite integração com motores simbólicos (Rafaelia) sem acoplamento frágil.
 - Escala para múltiplos backends (CPU, WASM, Rust, Python) sem dependências pesadas.
+- Permite raciocínio simbólico controlado por contratos e métricas explícitas.
 
 ## 7. Diretrizes de build e DevEx
 
@@ -268,6 +284,11 @@ int raf_engine_execute(const char *name, const void *input, void *output);
 - build_core.sh compila apenas gaia-core e testes de sanidade.
 - build_engines.sh compila plugins Rafaelia.
 - build_python.sh valida lint e empacotamento básico do orquestrador.
+
+### Estrutura recomendada dos scripts
+- build.sh chama build_core.sh, build_engines.sh e build_python.sh, com logs em logs/.
+- bench_minimal.sh roda testes mínimos e gera relatório único em /reports.
+- prepare_zipraf_layers.sh gera camadas versionadas com checksum.
 
 ### Testes mínimos sugeridos
 - test_hash: valida hashes determinísticos.
