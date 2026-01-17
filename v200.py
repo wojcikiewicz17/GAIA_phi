@@ -32,6 +32,7 @@ from datetime import datetime, timezone
 from dataclasses import dataclass, asdict, field
 from typing import Dict, List, Generator, Any, Tuple, Optional, Callable
 from array import array
+from rafaelia_image_c import compute_histogram_vector
 
 # Tenta carregar NumPy para o Kernel Neural (Fallback para Python Puro se falhar)
 try:
@@ -297,19 +298,10 @@ class MassiveIngestor:
         """Visão 'Raw-Byte' (Histograma de Entropia). Dependência Zero."""
         try:
             size = os.path.getsize(filepath)
-            hist = [0] * CONFIG["DIMENSION"]
-            with open(filepath, 'rb') as f:
-                # Lê amostragem para velocidade
-                chunk = f.read(CONFIG["STREAM_BUFFER"])
-                for i, byte in enumerate(chunk):
-                    # Mapeia byte (0-255) para dimensão do vetor
-                    idx = (byte * i) % CONFIG["DIMENSION"]
-                    hist[idx] += 1
-            
-            # Normaliza (Min-Max)
-            max_val = max(hist) if max(hist) > 0 else 1
-            vec = array('d', [float(x)/max_val for x in hist])
-            return vec, {"size": size, "type": "visual_raw"}
+            vector, meta = compute_histogram_vector(filepath, CONFIG["DIMENSION"])
+            vec = array('d', vector)
+            meta.update({"size": size, "type": "visual_raw"})
+            return vec, meta
         except Exception as e:
             return array('d', [0.0]*CONFIG["DIMENSION"]), {"error": str(e)}
 

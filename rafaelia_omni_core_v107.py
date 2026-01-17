@@ -28,6 +28,7 @@ from typing import Dict, List, Any, Tuple, Optional
 from dataclasses import dataclass, asdict
 from array import array
 from concurrent.futures import ThreadPoolExecutor
+from rafaelia_image_c import compute_histogram_vector
 
 # --- 1. CONFIG & LOG ---
 
@@ -210,27 +211,14 @@ class OmniPerception:
         Divide a imagem em 9 zonas (3x3) aproximadas (por byte offset) e
         cria um holograma vetorial com permutação espacial.
         """
-        meta: Dict[str, Any] = {"method": "holographic_grid_3x3"}
         try:
             size = os.path.getsize(filepath)
             if size <= 0:
                 return OmniMath.generate_base("empty"), {"error": "empty_file"}
-            vectors: List[array] = []
-            with open(filepath, "rb") as f:
-                chunk_size = max(1, size // 9)
-                for i in range(9):
-                    data = f.read(chunk_size)
-                    if not data:
-                        break
-                    seed = hashlib.md5(data).hexdigest()
-                    base_vec = OmniMath.generate_base(seed)
-                    spatial_vec = OmniMath.permute(base_vec, shifts=i + 1)
-                    vectors.append(spatial_vec)
-            if not vectors:
-                return OmniMath.generate_base("no_data"), {"error": "no_chunks"}
-            hologram = OmniMath.bundle(vectors)
-            meta["size_bytes"] = size
-            return hologram, meta
+
+            vector, meta = compute_histogram_vector(filepath, CONFIG["VECTOR_DIM"])
+            meta.update({"size_bytes": size, "method": "byte_histogram"})
+            return array("d", vector), meta
         except Exception as e:
             logger.error(f"[VISUAL] Erro em {filepath.name}: {e}")
             return OmniMath.generate_base("error"), {"error": str(e)}

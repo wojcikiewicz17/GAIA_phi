@@ -24,6 +24,7 @@ from datetime import datetime, timezone
 from typing import Dict, List, Generator, Any, Tuple
 from dataclasses import dataclass, asdict
 from array import array
+from rafaelia_image_c import compute_histogram_vector
 
 # --- 1. LOGGING (ISO 27001 Audit) ---
 
@@ -204,30 +205,14 @@ class MassiveFileHandler:
             size = os.path.getsize(filepath)
             with open(filepath, "rb") as f:
                 header = f.read(128)
-                f.seek(0)
-                hist = [0] * 256
-                while True:
-                    chunk = f.read(65536)
-                    if not chunk:
-                        break
-                    for b in chunk:
-                        hist[b] += 1
-            total = sum(hist) or 1
-            if vector_dim < 256:
-                reduced = [0] * vector_dim
-                for idx, count in enumerate(hist):
-                    target = int(idx * vector_dim / 256)
-                    reduced[target] += count
-                vec = [h / total for h in reduced]
-            else:
-                vec = [h / total for h in hist]
-                if len(vec) < vector_dim:
-                    vec.extend([0.0] * (vector_dim - len(vec)))
+
+            vec, meta = compute_histogram_vector(filepath, vector_dim)
             return {
                 "type": "image_raw",
                 "size_bytes": size,
                 "header_hex": header.hex()[:32],
                 "vector": vec,
+                "ingest": meta,
             }
         except Exception as e:
             logger.error(f"[IMG] Error ingesting {filepath.name}: {e}")
