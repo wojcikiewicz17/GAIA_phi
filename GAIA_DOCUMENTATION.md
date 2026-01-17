@@ -161,6 +161,14 @@ Gera `omega_zipraf.h`, implementa `zipraf_db.c` e monta o ambiente de camadas se
 ### 6.4. `build_raf_log.sh`
 Gera `raf_event_log.h` e `raf_event_log.c`, provendo um log encadeado verificável e imutável.
 
+### 6.5. Sequência de build recomendada (quickstart)
+1. **Build principal**: execute `build_gaia.sh` para gerar headers e binários essenciais (boot, ingest, visual, daemon, nanogpt).
+2. **VecDB**: execute `build_vecdb.sh` para criar o banco vetorial e as ferramentas de ingestão/consulta.
+3. **ZipRaf**: execute `build_commander_zipraf.sh` para inicializar as camadas semânticas (`layer_0.zrf`…`layer_7.zrf`) e o storage `support_knowledge/`.
+4. **Log encadeado**: execute `build_raf_log.sh` para habilitar logging auditável.
+
+> Observação: os scripts escrevem em `~/gaia_omega_build` e geram arquivos que podem ser utilizados como referência operacional para consolidar o ambiente.
+
 ---
 
 ## 7. Artefatos e dados
@@ -175,6 +183,16 @@ Gera `raf_event_log.h` e `raf_event_log.c`, provendo um log encadeado verificáv
 
 ### 7.3. Binários/executáveis pré‑compilados
 Existem executáveis sem extensão (ex.: `gaia_boot`, `gaia_vec_build`, `gaia_vec_query`, `gaia_nanogpt`, `gaia_d`, `gaia_visual`, `gaia_client`, `gaia_zipraf_inspect`, etc.) tanto na raiz quanto dentro de `dados/`. Estes binários refletem o resultado de builds anteriores e devem ser tratados como artefatos prontos para execução ou inspeção.
+
+### 7.4. Fluxos de uso (exemplos práticos)
+- **Ingestão básica no Nexus**: usar `gaia_ingest` com `dummy_data.txt` para popular a memória mapeada.
+- **Visualização radar**: `gaia_visual` renderiza a distribuição dos vetores no terminal.
+- **Servidor/cliente IPC**: `gaia_d` (daemon) + `gaia_client` ou `gaia_chat.py` (cliente) para busca/insert.
+- **NanoGPT simbólico**: `gaia_nanogpt` cria a janela de contexto e responde via atenção.
+- **VecDB**: `gaia_vec_build` cria o banco vetorial; `gaia_vec_query` faz consultas de similaridade.
+- **ZipRaf**: `zipraf_db.c` e ferramentas de inspeção permitem ingestão por camada e auditoria de CRC.
+
+> Esses fluxos são demonstrativos e destinam‑se a validar o pipeline de vetorização, memória e busca; eles não substituem um modelo ML completo.
 
 ---
 
@@ -265,3 +283,5 @@ Existem executáveis sem extensão (ex.: `gaia_boot`, `gaia_vec_build`, `gaia_ve
 
 ## 12. Observações finais
 Esta documentação é intencionalmente extensa e exaustiva para atender o requisito de inventariar e descrever cada arquivo do repositório. Ela oferece uma base sólida para futuras refatorações, migrações de arquitetura (C/ASM) ou consolidação de módulos em um núcleo mais conciso.
+
+Como próximos passos naturais, recomenda‑se: (1) consolidar duplicações entre `root` e `dados/`, (2) definir padrões de build únicos para eliminar divergências, e (3) criar um mapa de dependências entre módulos C, scripts e artefatos para reduzir a complexidade operacional.
