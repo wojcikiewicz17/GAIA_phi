@@ -1,0 +1,4 @@
+64 bytes from 1.1.1.1: icmp_seq=1 ttl=60 time=20.8 ms
+64 bytes from 1.1.1.1: icmp_seq=2 ttl=60 time=21.2 ms
+64 bytes from 1.1.1.1: icmp_seq=1 ttl=60 time=18.3 ms
+64 bytes from 1.1.1.1: icmp_seq=2 ttl=60 time=19.1 ms

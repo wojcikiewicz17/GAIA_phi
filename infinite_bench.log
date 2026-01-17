@@ -1,0 +1,14 @@
+GENESIS: Virtual 100000^3 mapped to Physical 67108864 cells (~256.00 MB)
+
+[BENCH] RAFAELIA INFINITE CORE
+[BENCH] Virtual Dim     : 100000^3 (1e15 cells conceituais)
+[BENCH] Physical Cells  : 67108864
+[BENCH] Steps           : 5000
+[BENCH] Inj/step        : 8
+[BENCH] Total Inj       : 40000
+[BENCH] Elapsed         : 0.062683 s
+[BENCH] Steps/s         : 79766.44
+[BENCH] Virtual events/s: 638131.55 (injeções)
+[BENCH] SOC-cells/s     : 81680838.50 (1024 cursores/step)
+[BENCH] Energy          : 1032.8037
+[BENCH] Hash            : 770B8DE6

@@ -1,0 +1,88 @@
+{"timestamp": "2025-12-05T11:05:33Z", "test_id": "COMPARATIVE_V1.2_FIXED",
+"system_config": {"cpu_mhz": "2800.0", "compiler": "clang", "flags": "-O3 -march=native -Wall -Wextra"},
+"metrics": {
+    "FIBER_H_CPB": 2.276,
+    "SHA256_BASELINE_CPB": 10.000
+},
+"optimization_factor": 4.393,
+"validation_target": "50x"
+}
+{"timestamp": "2025-12-05T11:05:42Z", "test_id": "COMPARATIVE_V1.2_FIXED",
+"system_config": {"cpu_mhz": "2800.0", "compiler": "clang", "flags": "-O3 -march=native -Wall -Wextra"},
+"metrics": {
+    "FIBER_H_CPB": 2.256,
+    "SHA256_BASELINE_CPB": 10.000
+},
+"optimization_factor": 4.432,
+"validation_target": "50x"
+}
+{"timestamp": "2025-12-05T11:05:50Z", "test_id": "COMPARATIVE_V1.2_FIXED",
+"system_config": {"cpu_mhz": "2800.0", "compiler": "clang", "flags": "-O3 -march=native -Wall -Wextra"},
+"metrics": {
+    "FIBER_H_CPB": 2.249,
+    "SHA256_BASELINE_CPB": 10.000
+},
+"optimization_factor": 4.446,
+"validation_target": "50x"
+}
+{"timestamp": "2025-12-05T11:07:36Z", "test_id": "COMPARATIVE_V1.2_FIXED",
+"system_config": {"cpu_mhz": "2800.0", "compiler": "clang", "flags": "-O3 -march=native -Wall -Wextra"},
+"metrics": {
+    "FIBER_H_CPB": 2.284,
+    "SHA256_BASELINE_CPB": 10.000
+},
+"optimization_factor": 4.378,
+"validation_target": "50x"
+}
+{"timestamp": "2025-12-05T11:10:27Z", "test_id": "COMPARATIVE_V1.3_COLOR",
+"system_config": {"cpu_mhz": "2800.0", "compiler": "clang", "flags": "-O3 -march=native -Wall -Wextra"},
+"metrics": {
+    "FIBER_H_CPB": 2.249,
+    "SHA256_BASELINE_CPB": 10.000
+},
+"optimization_factor": 4.446,
+"validation_target": "50x"
+}
+{"timestamp": "2025-12-05T11:16:52Z", "test_id": "COMPARATIVE_V1.3_COLOR",
+"system_config": {"cpu_mhz": "2800.0", "compiler": "clang", "flags": "-O3 -march=native -Wall -Wextra"},
+"metrics": {
+    "FIBER_H_CPB": 2.252,
+    "SHA256_BASELINE_CPB": 10.000
+},
+"optimization_factor": 4.440,
+"validation_target": "50x"
+}
+{"timestamp": "2025-12-05T11:17:44Z", "test_id": "COMPARATIVE_V1.3_COLOR",
+"system_config": {"cpu_mhz": "2800.0", "compiler": "clang", "flags": "-O3 -march=native -Wall -Wextra"},
+"metrics": {
+    "FIBER_H_CPB": 2.248,
+    "SHA256_BASELINE_CPB": 10.000
+},
+"optimization_factor": 4.448,
+"validation_target": "50x"
+}
+{"timestamp": "2025-12-05T11:25:52Z", "test_id": "COMPARATIVE_V1.3_COLOR",
+"system_config": {"cpu_mhz": "2800.0", "compiler": "clang", "flags": "-O3 -march=native -Wall -Wextra"},
+"metrics": {
+    "FIBER_H_CPB": 2.255,
+    "SHA256_BASELINE_CPB": 10.000
+},
+"optimization_factor": 4.434,
+"validation_target": "50x"
+}
+{"timestamp": "2025-12-05T12:26:34Z", "test_id": "COMPARATIVE_V1.3_COLOR",
+"system_config": {"cpu_mhz": "2800.0", "compiler": "clang", "flags": "-O3 -march=native -Wall -Wextra"},
+"metrics": {
+    "FIBER_H_CPB": 2.089,
+    "SHA256_BASELINE_CPB": 10.000
+},
+"optimization_factor": 4.786,
+"validation_target": "50x"
+}
+{"timestamp":"2025-12-05T13:06:52Z",
+ "algorithm":"FIBER-H",
+ "version":"v1.1",
+ "cpu_mhz":2800.0,
+ "total_mib":256,
+ "block_size":1024,
+ "results":{"time_s":0.086847,"mbps":MiB/s,"cycles_per_byte":0.906,"checksum":""}}

@@ -1,0 +1,13 @@
+SYS: RAM Aligned. Cells: 16777216 | Mask: 00FFFFFF
+[BENCH] RAFAELIA ABSOLUTE CORE
+[BENCH] Virtual Dim     : 1000^3
+[BENCH] Physical Cells  : 16777216
+[BENCH] Steps           : 5000
+[BENCH] Inj/step        : 8
+[BENCH] Total Inj       : 40000
+[BENCH] Elapsed         : 0.004448 s
+[BENCH] Steps/s         : 1124003.68
+[BENCH] Virtual events/s: 8992029.43
+[BENCH] SOC-cells/s     : 8992029.43
+[BENCH] Energy          : 400000.0000
+[BENCH] Hash            : B4FEDC94

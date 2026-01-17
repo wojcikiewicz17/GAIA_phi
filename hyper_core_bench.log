@@ -1,0 +1,8 @@
+[BENCH] RAFAELIA HYPER-CORE
+[BENCH] Grid       : 100x100x100 (N=1000000)
+[BENCH] Steps      : 20
+[BENCH] Elapsed    : 0.207884 s
+[BENCH] Steps/s    : 96.21
+[BENCH] CellUpd/s  : 96207500.34
+[BENCH] Energy     : 9047.5107
+[BENCH] Hash       : 8D412A45

@@ -1,0 +1,9 @@
+[BENCH] RAFAELIA MATRIX SOC
+[BENCH] Grid       : 100x100x100 (N=1000000)
+[BENCH] Steps      : 20
+[BENCH] Elapsed    : 0.288561 s
+[BENCH] Steps/s    : 69.31
+[BENCH] CellUpd/s  : 69309435.44
+[BENCH] Energy     : 165740.2969
+[BENCH] Mean       : 0.165740
+[BENCH] Hash       : FF124791

@@ -1,0 +1,21 @@
+
+[--- RAFAELIA MATRIX BENCHMARK ---]
+CPU Benchmark:
+  Ops          : 10000
+  Tokens/op    : 32
+  Total tokens : 320000
+  Elapsed      : 0.062064 s
+  Ops/s        : 161124.00
+  Tokens/s     : 5155968.03
+  Avg latency  : 0.0062 ms/op
+
+I/O Benchmark (CFG+MATRIX, 71220 bytes per op):
+  IO ops       : 256
+  Total bytes  : 18232320
+  Write time   : 0.014108 s
+  Write B/s    : 1292339098.38
+  Write IOPS   : 18145.73
+  Read time    : 0.005893 s
+  Read B/s     : 3093894451.04
+  Read IOPS    : 43441.37
+----------------------------------------

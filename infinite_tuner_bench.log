@@ -1,0 +1,13 @@
+
+[BENCH] RAFAELIA INFINITE TUNER
+[BENCH] Virtual Dim     : 1000^3
+[BENCH] Physical Cells  : 16777216
+[BENCH] Steps           : 5000
+[BENCH] Inj/step        : 8
+[BENCH] Total Inj       : 40000
+[BENCH] Elapsed         : 0.003966 s
+[BENCH] Steps/s         : 1260716.09
+[BENCH] Virtual events/s: 10085728.69
+[BENCH] SOC-cells/s     : 20655572365.10
+[BENCH] Energy          : 40000.0000
+[BENCH] Hash            : 92655706
