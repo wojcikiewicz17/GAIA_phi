@@ -301,3 +301,8 @@ int raf_engine_execute(const char *name, const void *input, void *output);
 - gaia_log expõe API de log encadeado (hash de eventos + checksum).
 - engines Rafaelia reportam métricas padronizadas (tempo, iterações, convergência).
 - orquestrador Python registra execução e artifacts em diretório de experimento.
+
+## 9. Evolução em ciclos
+
+- Ver plano incremental em `docs/RELEASES_59X.md` com 59 ciclos de avanço, incluindo operações,
+  ferramentas, metodologias e capacidades adicionais.
