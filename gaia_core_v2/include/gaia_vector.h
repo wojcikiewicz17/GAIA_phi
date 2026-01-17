@@ -16,5 +16,6 @@ GaiaStatus gaia_vector_resize(GaiaVector *v, uint32_t dim);
 GaiaStatus gaia_vector_zero(GaiaVector *v);
 float gaia_vector_dot(const GaiaVector *a, const GaiaVector *b);
 GaiaStatus gaia_vector_normalize(GaiaVector *v);
+GaiaStatus gaia_vector_project_hash(GaiaVector *v, uint64_t hash);
 
 #endif

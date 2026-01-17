@@ -12,5 +12,6 @@ typedef struct {
 GaiaStatus gaia_attention_register(const GaiaAttentionStrategy *strategy);
 GaiaStatus gaia_attention_apply(const char *name, const GaiaVector *query,
                                 const GaiaVector *vec, float *out_score);
+void gaia_attention_reset(void);
 
 #endif

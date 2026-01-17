@@ -1,4 +1,5 @@
 #include "gaia_vector.h"
+#include "gaia_projection.h"
 
 GaiaStatus gaia_vector_init(GaiaVector *v, float *buffer, uint32_t dim) {
     if (!v || !buffer || dim == 0) {
@@ -66,4 +67,14 @@ GaiaStatus gaia_vector_normalize(GaiaVector *v) {
         v->data[i] *= inv;
     }
     return GAIA_OK;
+}
+
+GaiaStatus gaia_vector_project_hash(GaiaVector *v, uint64_t hash) {
+    if (!v || !v->data) {
+        return GAIA_ERR_NULL;
+    }
+    if (v->dim == 3) {
+        return gaia_project_3d(hash, v->data);
+    }
+    return gaia_project_nd(hash, v->data, v->dim);
 }

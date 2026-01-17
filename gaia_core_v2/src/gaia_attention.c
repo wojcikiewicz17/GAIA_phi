@@ -48,3 +48,7 @@ GaiaStatus gaia_attention_apply(const char *name, const GaiaVector *query,
     }
     return gaia_attention_linear(query, vec, out_score);
 }
+
+void gaia_attention_reset(void) {
+    gaia_attention_count = 0;
+}
