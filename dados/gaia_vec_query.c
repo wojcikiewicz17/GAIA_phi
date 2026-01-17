@@ -18,6 +18,61 @@ typedef struct {
 } VecHit;
 
 // -----------------------------------------------------------------------------
+// Carrega índice (idx -> path) se existir
+// Formato esperado: idx|hash|doc_ref|path
+// -----------------------------------------------------------------------------
+static char** load_index_paths(const char* index_path, uint64_t max_entries) {
+    FILE* f = fopen(index_path, "r");
+    if (!f) return NULL;
+
+    char** paths = (char**)calloc((size_t)max_entries, sizeof(char*));
+    if (!paths) {
+        fclose(f);
+        return NULL;
+    }
+
+    char line[4096];
+    while (fgets(line, sizeof(line), f)) {
+        char* p = line;
+        char* endptr = NULL;
+        uint64_t idx = strtoull(p, &endptr, 10);
+        if (endptr == p || idx >= max_entries) continue;
+
+        // procurar o 3º separador '|'
+        char* sep1 = strchr(endptr, '|');
+        if (!sep1) continue;
+        char* sep2 = strchr(sep1 + 1, '|');
+        if (!sep2) continue;
+        char* sep3 = strchr(sep2 + 1, '|');
+        if (!sep3) continue;
+
+        char* path = sep3 + 1;
+        char* nl = strchr(path, '\n');
+        if (nl) *nl = '\0';
+
+        if (*path == '\0') continue;
+        if (paths[idx]) continue;
+
+        size_t len = strlen(path);
+        char* copy = (char*)malloc(len + 1);
+        if (!copy) continue;
+        memcpy(copy, path, len + 1);
+        paths[idx] = copy;
+    }
+
+    fclose(f);
+    return paths;
+}
+
+static void free_index_paths(char** paths, uint64_t max_entries) {
+    if (!paths) return;
+    for (uint64_t i = 0; i < max_entries; i++) {
+        free(paths[i]);
+    }
+    free(paths);
+}
+
+// -----------------------------------------------------------------------------
 // Utilitário de comparação para ordenar hits (maior score primeiro)
 // -----------------------------------------------------------------------------
 static int cmp_hits(const void* a, const void* b) {
@@ -130,6 +185,10 @@ int main(int argc, char** argv) {
         return 1;
     }
 
+    char index_path[2048];
+    snprintf(index_path, sizeof(index_path), "%s.index", db_path);
+    char** index_paths = load_index_paths(index_path, n);
+
     // Varre todos os registros em memória (32MB → super rápido)
     for (uint64_t i = 0; i < n; i++) {
         VecDBRecord* r = &recs[i];
@@ -162,7 +221,7 @@ int main(int argc, char** argv) {
         uint16_t layer = lp & 0x7u;
         uint16_t ports = (lp >> 3) & 0xFFu;
 
-        printf("  #%d  idx=%llu  score=%.4f  hash=%llu  layer=%u  ports=0x%02X  doc_ref=%llu\n",
+        printf("  #%d  idx=%llu  score=%.4f  hash=%llu  layer=%u  ports=0x%02X  doc_ref=%llu",
                k,
                (unsigned long long)h->idx,
                h->score,
@@ -170,8 +229,13 @@ int main(int argc, char** argv) {
                (unsigned)layer,
                (unsigned)ports,
                (unsigned long long)h->rec.doc_ref);
+        if (index_paths && index_paths[h->idx]) {
+            printf("  path=%s", index_paths[h->idx]);
+        }
+        printf("\n");
     }
 
+    free_index_paths(index_paths, n);
     free(hits);
     munmap(hdr, (size_t)total_size);
     return 0;
