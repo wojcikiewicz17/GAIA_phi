@@ -188,6 +188,9 @@ class MassiveFileHandler:
         sem precisar de PIL/OpenCV (Dependência Zero).
         """
         try:
+            vector_dim = CONFIG.get("VECTOR_DIM")
+            if not isinstance(vector_dim, int) or vector_dim <= 0:
+                raise ValueError(f"VECTOR_DIM inválido: {vector_dim}")
             size = os.path.getsize(filepath)
             with open(filepath, 'rb') as f:
                 header = f.read(128) # Assinatura
@@ -201,10 +204,17 @@ class MassiveFileHandler:
                         hist[b] += 1
             
             # Normaliza histograma para criar o vetor
-            total = sum(hist)
-            vector = [h / total for h in hist] 
-            # Padding para chegar a 1024 dimensoes
-            vector += [0.0] * (CONFIG["VECTOR_DIM"] - 256)
+            total = sum(hist) or 1
+            if vector_dim < 256:
+                reduced = [0] * vector_dim
+                for idx, count in enumerate(hist):
+                    target = int(idx * vector_dim / 256)
+                    reduced[target] += count
+                vector = [h / total for h in reduced]
+            else:
+                vector = [h / total for h in hist]
+                # Padding para chegar ao tamanho alvo
+                vector += [0.0] * (vector_dim - 256)
             
             return {
                 "type": "image_raw",

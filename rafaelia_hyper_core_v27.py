@@ -198,6 +198,9 @@ class MassiveFileHandler:
         Sem dependências externas.
         """
         try:
+            vector_dim = CONFIG.get("VECTOR_DIM")
+            if not isinstance(vector_dim, int) or vector_dim <= 0:
+                raise ValueError(f"VECTOR_DIM inválido: {vector_dim}")
             size = os.path.getsize(filepath)
             with open(filepath, "rb") as f:
                 header = f.read(128)
@@ -210,11 +213,16 @@ class MassiveFileHandler:
                     for b in chunk:
                         hist[b] += 1
             total = sum(hist) or 1
-            vec = [h / total for h in hist]
-            if len(vec) < CONFIG["VECTOR_DIM"]:
-                vec.extend([0.0] * (CONFIG["VECTOR_DIM"] - len(vec)))
+            if vector_dim < 256:
+                reduced = [0] * vector_dim
+                for idx, count in enumerate(hist):
+                    target = int(idx * vector_dim / 256)
+                    reduced[target] += count
+                vec = [h / total for h in reduced]
             else:
-                vec = vec[:CONFIG["VECTOR_DIM"]]
+                vec = [h / total for h in hist]
+                if len(vec) < vector_dim:
+                    vec.extend([0.0] * (vector_dim - len(vec)))
             return {
                 "type": "image_raw",
                 "size_bytes": size,
