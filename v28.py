@@ -28,6 +28,7 @@ from datetime import datetime, timezone
 from typing import Dict, List, Generator, Any, Tuple, Optional, Set
 from array import array
 from concurrent.futures import ThreadPoolExecutor
+from rafaelia_image_c import compute_histogram_vector
 
 # --- 1. CONFIGURAÇÃO OMNI & AUDIT (NIST 800-53) ---
 logging.basicConfig(
@@ -243,30 +244,11 @@ class OmniPerception:
         Divide a imagem em 9 zonas (3x3) e vetoriza cada uma,
         preservando relações espaciais via Permutação.
         """
-        meta = {"method": "holographic_grid_3x3"}
         try:
             size = os.path.getsize(filepath)
-            vectors = []
-            
-            with open(filepath, 'rb') as f:
-                # Lê o arquivo em 9 chunks aproximados (simulação de grid)
-                chunk_size = size // 9
-                for i in range(9):
-                    data = f.read(chunk_size)
-                    if not data: break
-                    
-                    # Vetoriza o conteúdo do chunk (textura/cor local)
-                    seed = hashlib.md5(data).hexdigest()
-                    vec = OmniMath.generate_base(seed)
-                    
-                    # Codifica a POSIÇÃO usando Permutação (Shift cíclico)
-                    # A zona 1 é shiftada 1x, a zona 9 é shiftada 9x.
-                    spatial_vec = OmniMath.permute(vec, shifts=i+1)
-                    vectors.append(spatial_vec)
-            
-            # O holograma final é a soma (Bundle) de todas as zonas
-            hologram = OmniMath.bundle(vectors)
-            return hologram, meta
+            vector, meta = compute_histogram_vector(filepath, CONFIG["VECTOR_DIM"])
+            meta.update({"size_bytes": size, "method": "byte_histogram"})
+            return array("d", vector), meta
             
         except Exception as e:
             logger.error(f"Erro visual: {e}")

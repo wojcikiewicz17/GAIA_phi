@@ -25,6 +25,7 @@ from datetime import datetime, timezone
 from typing import Dict, List, Generator, Any, Tuple
 from dataclasses import dataclass, asdict
 from array import array
+from rafaelia_image_c import compute_histogram_vector
 
 # --- 1. CONFIGURAÇÃO E LOGGING (ISO 27001 Audit) ---
 logging.basicConfig(
@@ -194,33 +195,15 @@ class MassiveFileHandler:
             size = os.path.getsize(filepath)
             with open(filepath, 'rb') as f:
                 header = f.read(128) # Assinatura
-                # Lê chunks para criar histograma de bytes (Vetor Visual Simplificado)
-                hist = [0] * 256
-                f.seek(0)
-                while True:
-                    chunk = f.read(65536)
-                    if not chunk: break
-                    for b in chunk:
-                        hist[b] += 1
-            
-            # Normaliza histograma para criar o vetor
-            total = sum(hist) or 1
-            if vector_dim < 256:
-                reduced = [0] * vector_dim
-                for idx, count in enumerate(hist):
-                    target = int(idx * vector_dim / 256)
-                    reduced[target] += count
-                vector = [h / total for h in reduced]
-            else:
-                vector = [h / total for h in hist]
-                # Padding para chegar ao tamanho alvo
-                vector += [0.0] * (vector_dim - 256)
+
+            vector, meta = compute_histogram_vector(filepath, vector_dim)
             
             return {
                 "type": "image_raw",
                 "size_bytes": size,
                 "header_hex": header.hex()[:20],
-                "vector": vector
+                "vector": vector,
+                "ingest": meta,
             }
         except Exception as e:
             logger.error(f"Erro lendo imagem {filepath}: {e}")
