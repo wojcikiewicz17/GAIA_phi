@@ -1,0 +1,364 @@
+{
+  "seeds": [
+    {
+      "den": 67,
+      "p2": 66,
+      "p8": 22,
+      "p10": 33,
+      "p16": 33,
+      "maxP": 66.0,
+      "sumP": 154.0,
+      "phi_span_2pi": 0.99609375,
+      "mean_radius": 10.684286186437316,
+      "std_radius": 0.6130852987902191,
+      "score": 0.8544882850372973,
+      "tags": [
+        "low_radius",
+        "ergodic_full",
+        "radial_diffuse",
+        "long_period"
+      ],
+      "profiles": [
+        "CORE_STRONG"
+      ]
+    },
+    {
+      "den": 59,
+      "p2": 58,
+      "p8": 58,
+      "p10": 58,
+      "p16": 29,
+      "maxP": 58.0,
+      "sumP": 203.0,
+      "phi_span_2pi": 0.9921875,
+      "mean_radius": 9.41342490129292,
+      "std_radius": 0.6129630764949926,
+      "score": 0.782697911241091,
+      "tags": [
+        "low_radius",
+        "ergodic_full",
+        "radial_diffuse",
+        "medium_period"
+      ],
+      "profiles": [
+        "CORE_STRONG"
+      ]
+    },
+    {
+      "den": 61,
+      "p2": 60,
+      "p8": 20,
+      "p10": 60,
+      "p16": 15,
+      "maxP": 60.0,
+      "sumP": 155.0,
+      "phi_span_2pi": 0.984375,
+      "mean_radius": 9.731081654721184,
+      "std_radius": 0.6129980274149884,
+      "score": 0.7370717793683876,
+      "tags": [
+        "low_radius",
+        "ergodic_partial",
+        "radial_diffuse",
+        "long_period"
+      ],
+      "profiles": []
+    },
+    {
+      "den": 118,
+      "p2": 58,
+      "p8": 58,
+      "p10": 58,
+      "p16": 29,
+      "maxP": 58.0,
+      "sumP": 203.0,
+      "phi_span_2pi": 0.98828125,
+      "mean_radius": 18.79361239443783,
+      "std_radius": 0.6133820244981315,
+      "score": 0.6883208235613207,
+      "tags": [
+        "high_radius",
+        "ergodic_full",
+        "radial_diffuse",
+        "medium_period"
+      ],
+      "profiles": [
+        "HIGH_ALT_STRONG"
+      ]
+    },
+    {
+      "den": 122,
+      "p2": 60,
+      "p8": 20,
+      "p10": 60,
+      "p16": 15,
+      "maxP": 60.0,
+      "sumP": 155.0,
+      "phi_span_2pi": 0.984375,
+      "mean_radius": 19.429905979418887,
+      "std_radius": 0.6133916387132576,
+      "score": 0.6569434502505369,
+      "tags": [
+        "high_radius",
+        "ergodic_partial",
+        "radial_diffuse",
+        "long_period"
+      ],
+      "profiles": []
+    },
+    {
+      "den": 53,
+      "p2": 52,
+      "p8": 52,
+      "p10": 13,
+      "p16": 13,
+      "maxP": 52.0,
+      "sumP": 130.0,
+      "phi_span_2pi": 0.99609375,
+      "mean_radius": 8.46075094163083,
+      "std_radius": 0.6128342938469467,
+      "score": 0.6226940094440004,
+      "tags": [
+        "low_radius",
+        "ergodic_full",
+        "radial_diffuse",
+        "medium_period"
+      ],
+      "profiles": []
+    },
+    {
+      "den": 81,
+      "p2": 54,
+      "p8": 18,
+      "p10": 9,
+      "p16": 27,
+      "maxP": 54.0,
+      "sumP": 108.0,
+      "phi_span_2pi": 0.98828125,
+      "mean_radius": 12.909424989397836,
+      "std_radius": 0.61322089544777,
+      "score": 0.5361902262690232,
+      "tags": [
+        "mid_radius",
+        "ergodic_full",
+        "radial_diffuse",
+        "medium_period"
+      ],
+      "profiles": []
+    },
+    {
+      "den": 106,
+      "p2": 52,
+      "p8": 52,
+      "p10": 13,
+      "p16": 13,
+      "maxP": 52.0,
+      "sumP": 130.0,
+      "phi_span_2pi": 0.99609375,
+      "mean_radius": 16.88487941440791,
+      "std_radius": 0.6133468208209139,
+      "score": 0.5183577512308734,
+      "tags": [
+        "mid_radius",
+        "ergodic_full",
+        "radial_diffuse",
+        "medium_period"
+      ],
+      "profiles": []
+    },
+    {
+      "den": 121,
+      "p2": 0,
+      "p8": 0,
+      "p10": 22,
+      "p16": 55,
+      "maxP": 55.0,
+      "sumP": 77.0,
+      "phi_span_2pi": 0.99609375,
+      "mean_radius": 19.27083056057891,
+      "std_radius": 0.6133893188164536,
+      "score": 0.5016533689242856,
+      "tags": [
+        "high_radius",
+        "ergodic_full",
+        "radial_diffuse",
+        "medium_period"
+      ],
+      "profiles": []
+    },
+    {
+      "den": 107,
+      "p2": 0,
+      "p8": 0,
+      "p10": 53,
+      "p16": 53,
+      "maxP": 53.0,
+      "sumP": 106.0,
+      "phi_span_2pi": 0.984375,
+      "mean_radius": 17.043930842216366,
+      "std_radius": 0.6133501859918045,
+      "score": 0.48023533010985275,
+      "tags": [
+        "mid_radius",
+        "ergodic_partial",
+        "radial_diffuse",
+        "medium_period"
+      ],
+      "profiles": []
+    },
+    {
+      "den": 103,
+      "p2": 51,
+      "p8": 17,
+      "p10": 34,
+      "p16": 51,
+      "maxP": 51.0,
+      "sumP": 153.0,
+      "phi_span_2pi": 0.94921875,
+      "mean_radius": 16.407737197199094,
+      "std_radius": 0.6133361644916256,
+      "score": 0.42041971098877523,
+      "tags": [
+        "mid_radius",
+        "angular_gap",
+        "radial_diffuse",
+        "medium_period"
+      ],
+      "profiles": [
+        "MASK_GAP"
+      ]
+    },
+    {
+      "den": 97,
+      "p2": 48,
+      "p8": 16,
+      "p10": 0,
+      "p16": 12,
+      "maxP": 48.0,
+      "sumP": 76.0,
+      "phi_span_2pi": 0.98828125,
+      "mean_radius": 15.453512662638913,
+      "std_radius": 0.6133119846279262,
+      "score": 0.3707608141986981,
+      "tags": [
+        "mid_radius",
+        "ergodic_full",
+        "radial_diffuse",
+        "medium_period"
+      ],
+      "profiles": []
+    },
+    {
+      "den": 47,
+      "p2": 23,
+      "p8": 23,
+      "p10": 46,
+      "p16": 23,
+      "maxP": 46.0,
+      "sumP": 115.0,
+      "phi_span_2pi": 0.88671875,
+      "mean_radius": 7.508654209165835,
+      "std_radius": 0.6126547995030759,
+      "score": 0.27788117394416606,
+      "tags": [
+        "low_radius",
+        "angular_gap",
+        "radial_diffuse",
+        "medium_period"
+      ],
+      "profiles": [
+        "MASK_GAP"
+      ]
+    },
+    {
+      "den": 115,
+      "p2": 44,
+      "p8": 44,
+      "p10": 22,
+      "p16": 11,
+      "maxP": 44.0,
+      "sumP": 121.0,
+      "phi_span_2pi": 0.9335937499999999,
+      "mean_radius": 18.31640710295228,
+      "std_radius": 0.6133741884190466,
+      "score": 0.21124745612370677,
+      "tags": [
+        "high_radius",
+        "angular_gap",
+        "radial_diffuse",
+        "medium_period"
+      ],
+      "profiles": [
+        "MASK_GAP"
+      ]
+    },
+    {
+      "den": 94,
+      "p2": 23,
+      "p8": 23,
+      "p10": 46,
+      "p16": 23,
+      "maxP": 46.0,
+      "sumP": 115.0,
+      "phi_span_2pi": 0.88671875,
+      "mean_radius": 14.97643417170833,
+      "std_radius": 0.6132982193068723,
+      "score": 0.14689877067919624,
+      "tags": [
+        "mid_radius",
+        "angular_gap",
+        "radial_diffuse",
+        "medium_period"
+      ],
+      "profiles": []
+    },
+    {
+      "den": 119,
+      "p2": 24,
+      "p8": 8,
+      "p10": 48,
+      "p16": 6,
+      "maxP": 48.0,
+      "sumP": 86.0,
+      "phi_span_2pi": 0.8671875,
+      "mean_radius": 18.95268373407754,
+      "std_radius": 0.6133845135269259,
+      "score": 0.08598878640873885,
+      "tags": [
+        "high_radius",
+        "angular_gap",
+        "radial_diffuse",
+        "medium_period"
+      ],
+      "profiles": []
+    }
+  ],
+  "profiles": {
+    "CORE_STRONG": {
+      "min_score": 0.7,
+      "required_tags": [
+        "ergodic_full"
+      ],
+      "forbidden_tags": [
+        "angular_gap"
+      ]
+    },
+    "HIGH_ALT_STRONG": {
+      "min_score": 0.6,
+      "required_tags": [
+        "high_radius",
+        "ergodic_full"
+      ],
+      "forbidden_tags": [
+        "angular_gap"
+      ]
+    },
+    "MASK_GAP": {
+      "min_score": 0.2,
+      "required_tags": [
+        "angular_gap"
+      ],
+      "forbidden_tags": []
+    }
+  }
+}

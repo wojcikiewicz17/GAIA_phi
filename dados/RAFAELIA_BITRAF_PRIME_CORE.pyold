@@ -1,0 +1,333 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+RAFAELIA_BITRAF_PRIME_CORE.py
+
+Núcleo de sementes Bitraf geradas a partir de:
+  - RAFAELIA_DIZIMA_INDEX.tsv
+  - RAFAELIA_DIZIMA_CONSTANT_BRIDGE.tsv
+
+Ideia:
+  • Ler o arquivo de ponte constante ↔ dízima.
+  • Descobrir, por constante e base, as melhores sementes:
+      - Período longo (period_len grande).
+      - Erro relativo pequeno (aproxima bem a constante).
+  • Expor isso como estrutura pronta para T.I. / Bitraf / criptografia.
+
+Uso rápido:
+  python RAFAELIA_BITRAF_PRIME_CORE.py
+
+Ou importar em outros módulos:
+  from RAFAELIA_BITRAF_PRIME_CORE import discover_bitraf_seeds, BITRAF_DEFAULT_SEEDS
+"""
+
+import csv
+import math
+from dataclasses import dataclass
+from typing import Dict, List, Tuple, Optional
+
+# ===========================================================================
+# Configuração RAFAELIA / parâmetros de seleção
+# ===========================================================================
+
+BRIDGE_FILE = "RAFAELIA_DIZIMA_CONSTANT_BRIDGE.tsv"
+
+# Filtros padrão — ajuste se quiser ser mais/brando
+MIN_PERIOD_LEN = 32          # queremos períodos longos
+MAX_REL_ERROR = 1e-6         # erro relativo máximo permitido
+FOCUS_BASES = {2, 10, 16}    # bases de interesse principal (2, 10, 16)
+
+
+@dataclass
+class BitrafSeed:
+    """
+    Uma semente Bitraf: constante aproximada por 1/den numa base específica.
+    """
+    const_name: str
+    symbol: str
+    base: int
+    den: int
+    period_len: int
+    pre_len: int
+    pre: str
+    period: str
+    error_rel: float
+    error_abs: float
+    approx_value: float
+
+    def id_str(self) -> str:
+        return f"{self.const_name} ({self.symbol}) / base {self.base} / 1/{self.den}"
+
+    def as_dict(self) -> Dict[str, object]:
+        return {
+            "const_name": self.const_name,
+            "symbol": self.symbol,
+            "base": self.base,
+            "den": self.den,
+            "period_len": self.period_len,
+            "pre_len": self.pre_len,
+            "pre": self.pre,
+            "period": self.period,
+            "error_rel": self.error_rel,
+            "error_abs": self.error_abs,
+            "approx_value": self.approx_value,
+        }
+
+
+# ===========================================================================
+# Funções utilitárias de header/colunas
+# ===========================================================================
+
+def _infer_columns(header: List[str]) -> Dict[str, Optional[str]]:
+    """
+    Descobre, de forma robusta, quais colunas do TSV representam
+    cada campo sem depender de nomes fixos (usa substring).
+    """
+    lower = [h.lower() for h in header]
+
+    def find_one(sub: str, required: bool = True) -> Optional[str]:
+        for h, l in zip(header, lower):
+            if sub in l:
+                return h
+        if required:
+            raise KeyError(f"[BITRAF] Não encontrei coluna contendo '{sub}' em {header}")
+        return None
+
+    cols = {
+        "const_name": find_one("const"),        # ex.: const_name
+        "symbol": find_one("symbol", False),    # ex.: symbol
+        "base": find_one("base"),
+        "den": find_one("den"),
+        "period_len": find_one("period_len"),
+        "pre_len": find_one("pre_len", False),
+        "pre": find_one("pre", False),
+        "period": find_one("period", False),
+        "error_rel": find_one("error_rel", False),
+        "error_abs": find_one("error_abs", False),
+        "approx_value": find_one("approx", False),
+    }
+
+    # Default simbólico se não houver símbolo explícito
+    if cols["symbol"] is None:
+        cols["symbol"] = cols["const_name"]
+
+    return cols
+
+
+def _safe_float(value: str, default: float = float("nan")) -> float:
+    try:
+        return float(value)
+    except Exception:
+        return default
+
+
+def _safe_int(value: str, default: int = 0) -> int:
+    try:
+        return int(value)
+    except Exception:
+        return default
+
+
+# ===========================================================================
+# Carga de sementes a partir do arquivo-ponte
+# ===========================================================================
+
+def load_bridge_seeds(
+    path: str = BRIDGE_FILE,
+    min_period: int = MIN_PERIOD_LEN,
+    max_rel_error: float = MAX_REL_ERROR,
+    focus_bases: Optional[set] = None,
+) -> List[BitrafSeed]:
+    """
+    Lê o RAFAELIA_DIZIMA_CONSTANT_BRIDGE.tsv e retorna uma lista de BitrafSeed
+    já filtradas por:
+      - base (se focus_bases não for None)
+      - período mínimo
+      - erro relativo máximo
+    """
+    if focus_bases is None:
+        focus_bases = set()
+
+    seeds: List[BitrafSeed] = []
+
+    with open(path, "r", encoding="utf-8") as f:
+        reader = csv.DictReader(f, delimiter="\t")
+        if reader.fieldnames is None:
+            raise RuntimeError(f"[BITRAF] Arquivo {path} sem cabeçalho.")
+        cols = _infer_columns(reader.fieldnames)
+
+        for row in reader:
+            base = _safe_int(row.get(cols["base"], "0"), 0)
+            den = _safe_int(row.get(cols["den"], "0"), 0)
+            period_len = _safe_int(row.get(cols["period_len"], "0"), 0)
+            pre_len = _safe_int(row.get(cols["pre_len"], "0"), 0) if cols["pre_len"] else 0
+            pre = row.get(cols["pre"], "") if cols["pre"] else ""
+            period = row.get(cols["period"], "") if cols["period"] else ""
+            error_rel = _safe_float(row.get(cols["error_rel"], "nan"), float("inf"))
+            error_abs = _safe_float(row.get(cols["error_abs"], "nan"), float("inf"))
+            approx_value = _safe_float(row.get(cols["approx_value"], "nan"), float("nan"))
+
+            const_name = row.get(cols["const_name"], "").strip()
+            symbol = row.get(cols["symbol"], const_name).strip()
+
+            # Filtros básicos
+            if base <= 0 or den <= 0 or period_len <= 0:
+                continue
+            if period_len < min_period:
+                continue
+            if not math.isfinite(error_rel) or error_rel > max_rel_error:
+                continue
+            if focus_bases and base not in focus_bases:
+                continue
+
+            seeds.append(
+                BitrafSeed(
+                    const_name=const_name or f"const_den_{den}",
+                    symbol=symbol or const_name or f"const_den_{den}",
+                    base=base,
+                    den=den,
+                    period_len=period_len,
+                    pre_len=pre_len,
+                    pre=pre,
+                    period=period,
+                    error_rel=error_rel,
+                    error_abs=error_abs,
+                    approx_value=approx_value,
+                )
+            )
+
+    return seeds
+
+
+def select_best_seeds(
+    seeds: List[BitrafSeed],
+) -> List[BitrafSeed]:
+    """
+    Dado um conjunto de sementes (já filtradas),
+    escolhe a MELHOR por (const_name, base), usando:
+      - maior período primeiro
+      - em empate, menor erro_rel
+    """
+    best: Dict[Tuple[str, int], BitrafSeed] = {}
+
+    for s in seeds:
+        key = (s.const_name, s.base)
+        if key not in best:
+            best[key] = s
+        else:
+            cur = best[key]
+            if (s.period_len > cur.period_len) or (
+                s.period_len == cur.period_len and s.error_rel < cur.error_rel
+            ):
+                best[key] = s
+
+    # Ordena para ficar bonito: por const_name, depois por base
+    result = sorted(best.values(), key=lambda x: (x.const_name, x.base))
+    return result
+
+
+def discover_bitraf_seeds(
+    bridge_path: str = BRIDGE_FILE,
+    min_period: int = MIN_PERIOD_LEN,
+    max_rel_error: float = MAX_REL_ERROR,
+    focus_bases: Optional[set] = None,
+) -> List[BitrafSeed]:
+    """
+    Função de alto nível:
+      1) Carrega sementes do arquivo-ponte.
+      2) Seleciona as melhores por constante/base.
+      3) Retorna lista de BitrafSeed.
+    """
+    seeds_raw = load_bridge_seeds(
+        path=bridge_path,
+        min_period=min_period,
+        max_rel_error=max_rel_error,
+        focus_bases=focus_bases,
+    )
+    return select_best_seeds(seeds_raw)
+
+
+# ===========================================================================
+# Sementes padrão (lazy) para importar em outros módulos
+# ===========================================================================
+
+def _lazy_default_seeds() -> List[BitrafSeed]:
+    """
+    Carrega, com os filtros padrão, as sementes Bitraf.
+    Chamado apenas se o módulo é importado e alguém acessa BITRAF_DEFAULT_SEEDS.
+    """
+    try:
+        seeds = discover_bitraf_seeds(
+            bridge_path=BRIDGE_FILE,
+            min_period=MIN_PERIOD_LEN,
+            max_rel_error=MAX_REL_ERROR,
+            focus_bases=FOCUS_BASES,
+        )
+        return seeds
+    except FileNotFoundError:
+        # Se o arquivo ainda não existir, retorna vazio, para não quebrar import.
+        return []
+
+
+# Isso será preenchido on-demand quando o módulo for usado.
+BITRAF_DEFAULT_SEEDS: List[BitrafSeed] = _lazy_default_seeds()
+
+
+# ===========================================================================
+# Executável – visão geral para inspeção em Termux
+# ===========================================================================
+
+def _print_seed(seed: BitrafSeed) -> None:
+    print(
+        f"- {seed.const_name} ({seed.symbol}) | base {seed.base} | 1/{seed.den} | "
+        f"period_len={seed.period_len} | err_rel={seed.error_rel:.2e}"
+    )
+    if seed.pre or seed.period:
+        print(f"    representação ≈ 0.{seed.pre}({seed.period})  (base {seed.base})")
+
+
+def main() -> None:
+    print("=" * 67)
+    print("RAFAELIA_BITRAF_PRIME_CORE – Núcleo de Sementes Bitraf")
+    print("=" * 67)
+    print(f"[i] Arquivo-ponte usado : {BRIDGE_FILE}")
+    print(f"[i] Filtros             : min_period={MIN_PERIOD_LEN}, "
+          f"max_rel_error={MAX_REL_ERROR:g}, bases={sorted(FOCUS_BASES)}")
+    print()
+
+    seeds = discover_bitraf_seeds(
+        bridge_path=BRIDGE_FILE,
+        min_period=MIN_PERIOD_LEN,
+        max_rel_error=MAX_REL_ERROR,
+        focus_bases=FOCUS_BASES,
+    )
+
+    if not seeds:
+        print("[!] Nenhuma semente encontrada com os filtros atuais.")
+        print("    → Verifique se RAFAELIA_DIZIMA_CONSTANT_BRIDGE.tsv existe na pasta.")
+        print("    → Ou relaxe os filtros MIN_PERIOD_LEN / MAX_REL_ERROR / FOCUS_BASES.")
+        return
+
+    print(f"[OK] Sementes selecionadas: {len(seeds)}")
+    print()
+
+    # Agrupar por constante só para mostrar um resumo amigável.
+    grouped: Dict[str, List[BitrafSeed]] = {}
+    for s in seeds:
+        grouped.setdefault(s.const_name, []).append(s)
+
+    for cname in sorted(grouped.keys()):
+        print(f"Constante: {cname}")
+        for s in sorted(grouped[cname], key=lambda x: x.base):
+            _print_seed(s)
+        print()
+
+    print("=" * 67)
+    print("Sugestão de uso em T.I. / Bitraf:")
+    print("  • Use den/base/period_len como seeds para PRNG, hashing, vetorização, etc.")
+    print("  • Use o pattern 0.pre(period) como fonte de bits/hex controlados.")
+    print("=" * 67)
+
+
+if __name__ == "__main__":
+    main()

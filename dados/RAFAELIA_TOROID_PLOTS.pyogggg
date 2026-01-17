@@ -1,0 +1,554 @@
+ #!/usr/bin/env python3
+# RAFAELIA_TOROID_PLOTS.py  (v2 – colored, hi-res, extra geometry views)
+#
+# Visual analytics for Bitraf ToroidΔπφ:
+#   - Scatter: maxP vs phi_span_2pi    (discrete complexity vs angular coverage)
+#   - Scatter: mean_radius vs phi_span_2pi (geometric scale vs coverage)
+#   - Scatter: den vs phi_span_2pi     (number line vs coverage)
+#   - Scatter: den vs mean_radius      (number line vs torus scale)
+#
+# Features:
+#   - Colored families (low / mid / high denominators)
+#   - High resolution PNG (dpi=400) and SVG export
+#   - Defensive checks for matplotlib, files and schema
+#
+# Dependencies:
+#   - RAFAELIA_TOROID_BITFLOW.py
+#   - RAFAELIA_DIZIMA_INDEX.tsv
+
+import csv
+import math
+import os
+from typing import Dict, List, Tuple
+
+try:
+    import matplotlib.pyplot as plt
+except ImportError:
+    plt = None
+
+from RAFAELIA_TOROID_BITFLOW import (
+    BITRAF_DEN_SEEDS,
+    generate_all_bitraf_flows,
+    build_torus_points_from_bits,
+    analyze_torus_points,
+)
+
+INDEX_PATH = "RAFAELIA_DIZIMA_INDEX.tsv"
+OUTPUT_BASE = "RAFAELIA_TOROID_PLOTS"
+
+# ---------------------------------------------------------------------
+# Family coloring (geometry bands)
+# ---------------------------------------------------------------------
+
+FAMILY_LOW = {47, 53, 59, 61, 67, 81}
+FAMILY_MID = {94, 97, 103, 106, 107}
+FAMILY_HIGH = {115, 118, 119, 121, 122}
+
+DEN_FAMILY: Dict[int, str] = {}
+for d in FAMILY_LOW:
+    DEN_FAMILY[d] = "low"
+for d in FAMILY_MID:
+    DEN_FAMILY[d] = "mid"
+for d in FAMILY_HIGH:
+    DEN_FAMILY[d] = "high"
+
+FAMILY_COLOR = {
+    "low": "tab:blue",
+    "mid": "tab:orange",
+    "high": "tab:green",
+    "unknown": "tab:gray",
+}
+
+FAMILY_LABEL = {
+    "low": "family low (≈ 47–81)",
+    "mid": "family mid (≈ 94–107)",
+    "high": "family high (≈ 115–122)",
+    "unknown": "other",
+}
+
+
+# ---------------------------------------------------------------------
+# Dízima index helpers
+# ---------------------------------------------------------------------
+
+def detect_columns(header: List[str]) -> Tuple[int, int, int]:
+    """
+    Detect the indices of the columns 'n', 'base', 'period_len' (or similar).
+    Robust to minor naming changes.
+    """
+    lower = [h.strip().lower() for h in header]
+
+    def find_one(candidates: List[str]) -> int:
+        for c in candidates:
+            if c in lower:
+                return lower.index(c)
+        return -1
+
+    idx_n = find_one(["n", "den", "denominator"])
+    idx_base = find_one(["base", "radix"])
+    idx_period = find_one(["period_len", "period", "period_length"])
+
+    if idx_n < 0 or idx_base < 0 or idx_period < 0:
+        raise ValueError(
+            "Could not detect required columns in RAFAELIA_DIZIMA_INDEX.tsv.\n"
+            f"Header: {header}\n"
+            "Expected something like:\n"
+            "  - n / den / denominator\n"
+            "  - base / radix\n"
+            "  - period_len / period / period_length"
+        )
+
+    return idx_n, idx_base, idx_period
+
+
+def load_periods_for_seeds(path: str) -> Dict[int, Dict[int, int]]:
+    """
+    Load period lengths from RAFAELIA_DIZIMA_INDEX.tsv for the denominators
+    in BITRAF_DEN_SEEDS.
+
+    Returns:
+        periods[den][base] = period_len
+    """
+    periods: Dict[int, Dict[int, int]] = {den: {} for den in BITRAF_DEN_SEEDS}
+
+    with open(path, "r", encoding="utf-8") as f:
+        reader = csv.reader(f, delimiter="\t")
+        try:
+            header = next(reader)
+        except StopIteration:
+            raise ValueError("RAFAELIA_DIZIMA_INDEX.tsv is empty.")
+
+        idx_n, idx_base, idx_period = detect_columns(header)
+
+        for row in reader:
+            if not row or len(row) <= max(idx_n, idx_base, idx_period):
+                continue
+            try:
+                den = int(row[idx_n])
+                base = int(row[idx_base])
+                period_len = int(row[idx_period])
+            except ValueError:
+                # Non-numeric row, skip gracefully
+                continue
+
+            if den in periods:
+                periods[den][base] = period_len
+
+    return periods
+
+
+# ---------------------------------------------------------------------
+# Toroid signatures
+# ---------------------------------------------------------------------
+
+def compute_toroid_signatures_for_seeds(
+    n_bits: int = 256,
+    samples_per_bit: int = 1,
+) -> Dict[int, Dict[str, float]]:
+    """
+    For each denominator in BITRAF_DEN_SEEDS:
+      - generate bitflow for 1/den
+      - map to torus
+      - compute geometric/phase signature
+
+    Returns:
+        signatures[den] = {
+            "phi_span_2pi": float,
+            "mean_radius": float,
+            "std_radius": float,
+            "center_x": float,
+            "center_y": float,
+            "center_z": float,
+        }
+    """
+    signatures: Dict[int, Dict[str, float]] = {}
+
+    flows = generate_all_bitraf_flows(BITRAF_DEN_SEEDS, n_bits=n_bits)
+
+    for den in BITRAF_DEN_SEEDS:
+        bits = flows[den]
+        try:
+            points, phis, R, r = build_torus_points_from_bits(
+                den=den,
+                bits=bits,
+                samples_per_bit=samples_per_bit,
+            )
+            sig = analyze_torus_points(points, phis, R, r)
+        except Exception as e:
+            print(f"[!] Error computing toroid signature for den={den}: {e}")
+            continue
+
+        signatures[den] = {
+            "phi_span_2pi": sig.get("phi_span_2pi", float("nan")),
+            "mean_radius": sig.get("mean_radius", float("nan")),
+            "std_radius": sig.get("std_radius", float("nan")),
+            "center_x": sig.get("center_x", float("nan")),
+            "center_y": sig.get("center_y", float("nan")),
+            "center_z": sig.get("center_z", float("nan")),
+        }
+
+    return signatures
+
+
+# ---------------------------------------------------------------------
+# Plot helpers
+# ---------------------------------------------------------------------
+
+def ensure_output_dir(base: str) -> str:
+    """
+    Ensure that the output directory exists.
+    """
+    out_dir = base
+    if os.path.isfile(out_dir):
+        out_dir = base + "_dir"
+
+    if not os.path.isdir(out_dir):
+        os.makedirs(out_dir, exist_ok=True)
+
+    return out_dir
+
+
+def get_family(den: int) -> str:
+    """
+    Return family label for a given denominator.
+    """
+    return DEN_FAMILY.get(den, "unknown")
+
+
+def get_color_for_den(den: int) -> str:
+    """
+    Return color string for a given denominator.
+    """
+    fam = get_family(den)
+    return FAMILY_COLOR.get(fam, FAMILY_COLOR["unknown"])
+
+
+def scatter_with_families(
+    xs: List[float],
+    ys: List[float],
+    dens: List[int],
+    xlabel: str,
+    ylabel: str,
+    title: str,
+    out_png: str,
+    out_svg: str,
+) -> None:
+    """
+    Generic scatter plot with:
+        - points colored by family
+        - labels = denominators
+        - high resolution PNG + SVG export
+    """
+    plt.figure(figsize=(10, 7))
+
+    # To build legend: one handle per family
+    family_plotted: Dict[str, bool] = {}
+
+    for x, y, den in zip(xs, ys, dens):
+        fam = get_family(den)
+        color = get_color_for_den(den)
+        label = FAMILY_LABEL.get(fam, fam)
+
+        if fam not in family_plotted:
+            plt.scatter([x], [y], c=color, label=label)
+            family_plotted[fam] = True
+        else:
+            plt.scatter([x], [y], c=color)
+
+        # annotation
+        plt.text(x + 0.05, y, str(den), fontsize=8)
+
+    plt.xlabel(xlabel)
+    plt.ylabel(ylabel)
+    plt.title(title)
+    plt.grid(True, linestyle="--", alpha=0.4)
+
+    if family_plotted:
+        plt.legend(fontsize=8, loc="best", framealpha=0.8)
+
+    plt.tight_layout()
+    plt.savefig(out_png, dpi=400)
+    plt.savefig(out_svg)
+    plt.close()
+
+
+def plot_maxP_vs_phi_span(
+    maxP: Dict[int, int],
+    phi_span: Dict[int, float],
+    out_dir: str,
+) -> Tuple[str, str]:
+    """
+    x: maxP
+    y: phi_span_2pi
+    """
+    xs: List[float] = []
+    ys: List[float] = []
+    dens: List[int] = []
+
+    for den in sorted(maxP.keys()):
+        if den not in phi_span:
+            continue
+        if maxP[den] < 0 or math.isnan(phi_span[den]):
+            continue
+        xs.append(float(maxP[den]))
+        ys.append(float(phi_span[den]))
+        dens.append(den)
+
+    if not xs:
+        raise ValueError("No data available for maxP vs phi_span plot.")
+
+    out_png = os.path.join(out_dir, "maxP_vs_phi_span.png")
+    out_svg = os.path.join(out_dir, "maxP_vs_phi_span.svg")
+
+    scatter_with_families(
+        xs,
+        ys,
+        dens,
+        xlabel="maxP (maximum period over bases {2,8,10,16})",
+        ylabel="phi_span_2pi (normalized angular coverage)",
+        title="RAFAELIA – maxP vs ToroidΔπφ angular span",
+        out_png=out_png,
+        out_svg=out_svg,
+    )
+
+    return out_png, out_svg
+
+
+def plot_mean_radius_vs_phi_span(
+    mean_radius: Dict[int, float],
+    phi_span: Dict[int, float],
+    out_dir: str,
+) -> Tuple[str, str]:
+    """
+    x: mean_radius
+    y: phi_span_2pi
+    """
+    xs: List[float] = []
+    ys: List[float] = []
+    dens: List[int] = []
+
+    for den in sorted(mean_radius.keys()):
+        if den not in phi_span:
+            continue
+        if math.isnan(mean_radius[den]) or math.isnan(phi_span[den]):
+            continue
+        xs.append(float(mean_radius[den]))
+        ys.append(float(phi_span[den]))
+        dens.append(den)
+
+    if not xs:
+        raise ValueError("No data available for mean_radius vs phi_span plot.")
+
+    out_png = os.path.join(out_dir, "mean_radius_vs_phi_span.png")
+    out_svg = os.path.join(out_dir, "mean_radius_vs_phi_span.svg")
+
+    scatter_with_families(
+        xs,
+        ys,
+        dens,
+        xlabel="mean_radius (toroid mean |(x,y,z)|)",
+        ylabel="phi_span_2pi (normalized angular coverage)",
+        title="RAFAELIA – mean_radius vs ToroidΔπφ angular span",
+        out_png=out_png,
+        out_svg=out_svg,
+    )
+
+    return out_png, out_svg
+
+
+def plot_den_vs_phi_span(
+    phi_span: Dict[int, float],
+    out_dir: str,
+) -> Tuple[str, str]:
+    """
+    x: denominator
+    y: phi_span_2pi
+
+    This plot links the number line to angular coverage; visually shows
+    how families occupy contiguous ranges of denominators.
+    """
+    xs: List[float] = []
+    ys: List[float] = []
+    dens: List[int] = []
+
+    for den in sorted(phi_span.keys()):
+        if math.isnan(phi_span[den]):
+            continue
+        xs.append(float(den))
+        ys.append(float(phi_span[den]))
+        dens.append(den)
+
+    if not xs:
+        raise ValueError("No data available for den vs phi_span plot.")
+
+    out_png = os.path.join(out_dir, "den_vs_phi_span.png")
+    out_svg = os.path.join(out_dir, "den_vs_phi_span.svg")
+
+    scatter_with_families(
+        xs,
+        ys,
+        dens,
+        xlabel="denominator n",
+        ylabel="phi_span_2pi (normalized angular coverage)",
+        title="RAFAELIA – den vs ToroidΔπφ angular span",
+        out_png=out_png,
+        out_svg=out_svg,
+    )
+
+    return out_png, out_svg
+
+
+def plot_den_vs_mean_radius(
+    mean_radius: Dict[int, float],
+    out_dir: str,
+) -> Tuple[str, str]:
+    """
+    x: denominator
+    y: mean_radius
+
+    This plot links the number line to toroidal scale (R-related).
+    """
+    xs: List[float] = []
+    ys: List[float] = []
+    dens: List[int] = []
+
+    for den in sorted(mean_radius.keys()):
+        if math.isnan(mean_radius[den]):
+            continue
+        xs.append(float(den))
+        ys.append(float(mean_radius[den]))
+        dens.append(den)
+
+    if not xs:
+        raise ValueError("No data available for den vs mean_radius plot.")
+
+    out_png = os.path.join(out_dir, "den_vs_mean_radius.png")
+    out_svg = os.path.join(out_dir, "den_vs_mean_radius.svg")
+
+    scatter_with_families(
+        xs,
+        ys,
+        dens,
+        xlabel="denominator n",
+        ylabel="mean_radius (toroid mean |(x,y,z)|)",
+        title="RAFAELIA – den vs ToroidΔπφ scale",
+        out_png=out_png,
+        out_svg=out_svg,
+    )
+
+    return out_png, out_svg
+
+
+# ---------------------------------------------------------------------
+# Main
+# ---------------------------------------------------------------------
+
+def main() -> None:
+    """
+    Orchestrate:
+        1) Check matplotlib.
+        2) Load periods, compute maxP.
+        3) Compute toroid signatures.
+        4) Correlation maxP–phi_span.
+        5) Generate 4 plots (PNG + SVG).
+    """
+    print("===================================================================")
+    print("RAFAELIA_TOROID_PLOTS – Visualização de maxP × ToroidΔπφ (v2)")
+    print("===================================================================\n")
+
+    if plt is None:
+        print("[!] matplotlib is not available in this environment.")
+        print("    Please install it (e.g., 'pip install matplotlib') and retry.")
+        return
+
+    if not os.path.isfile(INDEX_PATH):
+        print(f"[!] {INDEX_PATH} not found in current directory.")
+        print("    Make sure RAFAELIA_DIZIMA_INDEX.tsv is present in ~/eusou.")
+        return
+
+    # 1) Load periods and compute maxP
+    try:
+        periods = load_periods_for_seeds(INDEX_PATH)
+    except Exception as e:
+        print(f"[!] Error loading periods from {INDEX_PATH}: {e}")
+        return
+
+    maxP: Dict[int, int] = {}
+    for den in BITRAF_DEN_SEEDS:
+        per = periods.get(den, {})
+        candidates = [p for p in per.values() if p >= 0]
+        maxP[den] = max(candidates) if candidates else -1
+
+    # 2) Compute toroid signatures
+    signatures = compute_toroid_signatures_for_seeds(
+        n_bits=256,
+        samples_per_bit=1,
+    )
+
+    phi_span: Dict[int, float] = {}
+    mean_radius: Dict[int, float] = {}
+
+    for den, sig in signatures.items():
+        phi_span[den] = sig.get("phi_span_2pi", float("nan"))
+        mean_radius[den] = sig.get("mean_radius", float("nan"))
+
+    # 3) Correlation maxP × phi_span
+    xs_corr: List[float] = []
+    ys_corr: List[float] = []
+    for den in BITRAF_DEN_SEEDS:
+        if den in maxP and den in phi_span:
+            if maxP[den] >= 0 and not math.isnan(phi_span[den]):
+                xs_corr.append(float(maxP[den]))
+                ys_corr.append(float(phi_span[den]))
+
+    if xs_corr and len(xs_corr) > 1:
+        mean_x = sum(xs_corr) / len(xs_corr)
+        mean_y = sum(ys_corr) / len(ys_corr)
+        num = sum((x - mean_x) * (y - mean_y) for x, y in zip(xs_corr, ys_corr))
+        den_x = math.sqrt(sum((x - mean_x) ** 2 for x in xs_corr))
+        den_y = math.sqrt(sum((y - mean_y) ** 2 for y in ys_corr))
+        corr = num / (den_x * den_y) if den_x > 0 and den_y > 0 else float("nan")
+    else:
+        corr = float("nan")
+
+    print(">> Correlation between maxP and phi_span_2pi (Pearson-style):")
+    print(f"   corr ≈ {corr:.6f}\n")
+
+    # 4) Plots
+    out_dir = ensure_output_dir(OUTPUT_BASE)
+
+    try:
+        p1_png, p1_svg = plot_maxP_vs_phi_span(maxP, phi_span, out_dir)
+        print(f"[OK] maxP vs phi_span plot saved to: {p1_png}")
+        print(f"[OK] SVG version saved to:        {p1_svg}")
+    except Exception as e:
+        print(f"[!] Error generating maxP vs phi_span plot: {e}")
+
+    try:
+        p2_png, p2_svg = plot_mean_radius_vs_phi_span(mean_radius, phi_span, out_dir)
+        print(f"[OK] mean_radius vs phi_span plot saved to: {p2_png}")
+        print(f"[OK] SVG version saved to:                 {p2_svg}")
+    except Exception as e:
+        print(f"[!] Error generating mean_radius vs phi_span plot: {e}")
+
+    try:
+        p3_png, p3_svg = plot_den_vs_phi_span(phi_span, out_dir)
+        print(f"[OK] den vs phi_span plot saved to:       {p3_png}")
+        print(f"[OK] SVG version saved to:                {p3_svg}")
+    except Exception as e:
+        print(f"[!] Error generating den vs phi_span plot: {e}")
+
+    try:
+        p4_png, p4_svg = plot_den_vs_mean_radius(mean_radius, out_dir)
+        print(f"[OK] den vs mean_radius plot saved to:    {p4_png}")
+        print(f"[OK] SVG version saved to:                {p4_svg}")
+    except Exception as e:
+        print(f"[!] Error generating den vs mean_radius plot: {e}")
+
+    print("\n[info] Plots generated under directory:", out_dir)
+    print("[info] Use these visuals to refine Rafaelian conjectures and")
+    print("       to select new denominators / seeds for further study.")
+
+
+if __name__ == "__main__":
+    main()

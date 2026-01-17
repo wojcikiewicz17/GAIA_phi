@@ -1,0 +1,22 @@
+# Makefile_Bitraf
+# Simple wrapper around the RAFAELIA Bitraf pipeline.
+# Requires: Python in PATH and scripts in current directory.
+
+PYTHON := python
+
+all: bitraf_pipeline
+
+bitraf_pipeline:
+	$(PYTHON) RAFAELIA_DIZIMA_INDEX_GERADOR.py
+	$(PYTHON) RAFAELIA_DIZIMA_CONSTANT_BRIDGE.py
+	$(PYTHON) RAFAELIA_BITRAF_PRIME_CORE.py
+	$(PYTHON) RAFAELIA_TOROID_PLOTS_v2.py
+	$(PYTHON) RAFAELIA_BITRAF_SEEDS_EXPORT.py
+	$(PYTHON) RAFAELIA_BITRAF_SEEDS_GEN.py
+
+plots:
+	$(PYTHON) RAFAELIA_TOROID_PLOTS_v2.py
+
+export:
+	$(PYTHON) RAFAELIA_BITRAF_SEEDS_EXPORT.py
+	$(PYTHON) RAFAELIA_BITRAF_SEEDS_GEN.py
