@@ -27,6 +27,13 @@ typedef struct {
 } PipelineStage;
 
 typedef struct {
+    const char *stage;
+    const char *owner;
+    const char *responsibility;
+    const char *output;
+} StageResponsibility;
+
+typedef struct {
     const char *base_path;
     const char *json_path;
     const char *md_path;
@@ -173,6 +180,17 @@ static const PipelineStage pipeline_stages[] = {
     {"SUMMARY", "Consolida metadados e metrics"}
 };
 
+static const StageResponsibility pipeline_responsibilities[] = {
+    {"BOOTSTRAP", "CONFIG_GATE", "Carregar defaults, flags e base path", "Config efetiva"},
+    {"DISCOVERY", "SCAN_ENGINE", "Percorrer diretorios e identificar candidatos", "Lista de caminhos"},
+    {"FILTER", "FILTER_ENGINE", "Aplicar extensoes, hidden, depth e size", "Candidatos filtrados"},
+    {"METADATA", "STAT_ENGINE", "Extrair tamanho, tipo e erros", "Metadados basicos"},
+    {"HASHING", "HASH_ENGINE", "Gerar SHA3 quando habilitado", "Digest SHA3"},
+    {"INDEX", "JSON_ENGINE", "Persistir registros no JSON", "Indice JSON"},
+    {"REPORT", "REPORT_ENGINE", "Persistir linhas Markdown", "Relatorio MD"},
+    {"SUMMARY", "SUMMARY_ENGINE", "Consolidar estatisticas finais", "Sumario executivo"}
+};
+
 static void print_usage(const char *prog) {
     printf("Uso: %s [opcoes]\n", prog);
     printf("  --base <path>          Diretorio base (padrao .)\n");
@@ -187,6 +205,7 @@ static void print_usage(const char *prog) {
     printf("  --no-architecture      Remove matriz arquitetural\n");
     printf("  --no-opportunities     Remove catalogo de oportunidades\n");
     printf("  --no-pipeline          Remove pipeline de orquestracao\n");
+    printf("  --no-responsibilities  Remove matriz de responsabilidades\n");
     printf("  --help                 Exibe esta ajuda\n");
 }
 
@@ -355,6 +374,19 @@ static void write_pipeline(FILE *md_out) {
     fprintf(md_out, "\n");
 }
 
+static void write_responsibilities(FILE *md_out) {
+    fprintf(md_out, "\n## Matriz de responsabilidades (cada etapa tem o que fazer)\n\n");
+    fprintf(md_out, "| Etapa | Responsavel | Responsabilidade | Saida |\n| --- | --- | --- | --- |\n");
+    for (size_t i = 0; i < sizeof(pipeline_responsibilities) / sizeof(pipeline_responsibilities[0]); i++) {
+        fprintf(md_out, "| %s | %s | %s | %s |\n",
+                pipeline_responsibilities[i].stage,
+                pipeline_responsibilities[i].owner,
+                pipeline_responsibilities[i].responsibility,
+                pipeline_responsibilities[i].output);
+    }
+    fprintf(md_out, "\n");
+}
+
 static void write_opportunities(FILE *md_out) {
     fprintf(md_out, "\n## Catalogo de oportunidades (42)\n\n");
     for (size_t i = 0; i < 42; i++) {
@@ -386,6 +418,7 @@ int main(int argc, char **argv) {
     cfg.emit_architecture = 1;
     cfg.emit_opportunities = 1;
     int emit_pipeline = 1;
+    int emit_responsibilities = 1;
     cfg.max_depth = -1;
     cfg.max_size = -1;
     load_default_extensions(&cfg);
@@ -415,6 +448,8 @@ int main(int argc, char **argv) {
             cfg.emit_opportunities = 0;
         } else if (!strcmp(argv[i], "--no-pipeline")) {
             emit_pipeline = 0;
+        } else if (!strcmp(argv[i], "--no-responsibilities")) {
+            emit_responsibilities = 0;
         } else if (!strcmp(argv[i], "--help")) {
             print_usage(argv[0]);
             return 0;
@@ -453,6 +488,10 @@ int main(int argc, char **argv) {
 
     if (emit_pipeline) {
         write_pipeline(md_out);
+    }
+
+    if (emit_responsibilities) {
+        write_responsibilities(md_out);
     }
 
     if (cfg.emit_opportunities) {
