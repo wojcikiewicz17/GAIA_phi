@@ -4,7 +4,8 @@
 # Compatível com o núcleo já existente (omega_protocol, omega_hash, etc.)
 # =============================================================================
 
-BASE_DIR=~/gaia_omega_build
+BASE_DIR=${BASE_DIR:-$(pwd)/gaia_omega_build}
+mkdir -p "$BASE_DIR"
 mkdir -p "$BASE_DIR/headers"
 mkdir -p "$BASE_DIR/core"
 mkdir -p "$BASE_DIR/nexus_zipraf"      # opcional, reservado

@@ -8,6 +8,92 @@ O projeto **GAIA-Ω** organiza um ecossistema experimental em C e Python voltado
 
 ---
 
+## GAIA_CORE CLI (ponto de entrada)
+
+O ponto de entrada padronizado para consolidar o core é o **CLI `gaia_core.py`**. Ele oferece o comando `manifest` para gerar um manifesto determinístico (JSON/JSONL/MD) com SHA3‑256, filtros por extensão, dry‑run e modo strict.
+
+---
+
+## Instalação (Linux/Termux)
+
+Dependências mínimas:
+- `python3` (obrigatório)
+- `openssl` (opcional, usado para SHA3‑256 quando disponível)
+- `gcc/cc` e `make` (para compilar os binários C quando necessário)
+
+### Linux (Debian/Ubuntu)
+```bash
+sudo apt-get update
+sudo apt-get install -y python3 gcc make openssl
+```
+
+### Termux
+```bash
+pkg update
+pkg install -y python clang make openssl
+```
+
+---
+
+## Como rodar (CLI + build)
+
+### Manifesto determinístico (Linux/Termux)
+```bash
+python3 gaia_core.py manifest --root . --ext .c,.h,.py --format json,jsonl,md --out-dir ./gaia_core_manifest --openssl
+```
+
+### Modo dry-run (não grava arquivos)
+```bash
+python3 gaia_core.py manifest --root . --ext .c,.h --dry-run
+```
+
+### Modo strict (falha se houver erro)
+```bash
+python3 gaia_core.py manifest --root . --ext .c,.h --strict
+```
+
+### Build C (Linux/Termux)
+```bash
+BASE_DIR="$PWD/gaia_omega_build" bash build_gaia.sh
+BASE_DIR="$PWD/gaia_omega_build" bash build_vecdb.sh
+BASE_DIR="$PWD/gaia_omega_build" bash build_commander_zipraf.sh
+BASE_DIR="$PWD/gaia_omega_build" bash build_raf_log.sh
+```
+
+---
+
+## Flags principais (CLI)
+
+```text
+manifest
+  --root        Diretório raiz para varredura (default: diretório atual)
+  --ext         Extensões filtradas (ex.: .c,.h,.py). Se omitido, inclui tudo
+  --exclude-dir Diretórios excluídos (pode repetir)
+  --format      json,jsonl,md (default: todos)
+  --out-dir     Diretório de saída (default: ./gaia_core_manifest)
+  --openssl     Preferir OpenSSL para SHA3-256 (fallback em hashlib)
+  --dry-run     Não grava arquivos; apenas imprime resumo
+  --strict      Falha se ocorrer erro durante a varredura
+```
+
+---
+
+## Outputs gerados (manifest)
+
+- `manifest.json` — estrutura completa com filtros, resumo e entradas.
+- `manifest.jsonl` — um JSON por linha (path/size/sha3_256).
+- `manifest.md` — relatório em Markdown com tabela e erros.
+
+---
+
+## Testes mínimos
+
+```bash
+bash tests/run_tests.sh
+```
+
+---
+
 ## Motivação e escopo
 1. **Vetorização mínima e determinística**: reduzir dimensionalidade a um vetor 3D preservando sinal semântico aproximado e custo constante de hashing. 【F:GAIA_DOCUMENTATION.md†L16-L43】
 2. **Memória persistente e atenção**: testar busca linear por produto interno sobre memória mapeada (Nexus/MMAP), com janela de contexto virtual. 【F:GAIA_DOCUMENTATION.md†L74-L115】
