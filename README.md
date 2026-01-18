@@ -3,6 +3,9 @@
 ## Resumo acadêmico
 O projeto **GAIA-Ω** organiza um ecossistema experimental em C e Python voltado a vetorização semântica ultra‑compacta (3D), memória persistente mapeada em disco, busca aproximada por produto interno, protocolos IPC, e mecanismos de armazenamento compacto (VecDB/ZipRaf). O repositório também inclui motores matemáticos simbólicos “Rafaelia”, com foco em simulação de coexistência entre famílias algébricas e análise de convergência numérica. O objetivo é fornecer um laboratório reprodutível para investigar o acoplamento entre hashing semântico leve, estruturas de armazenamento persistente e pipelines de atenção/consulta em ambientes de baixa dimensão. 【F:GAIA_DOCUMENTATION.md†L1-L167】
 
+## Auditoria de estabilidade
+- [Auditoria de Estabilidade — GAIA-Ω (documento navegável)](docs/AUDITORIA_CORE_ESTAVEL.md)
+
 ---
 
 ## Motivação e escopo
