@@ -22,6 +22,18 @@ typedef struct {
 } Layer;
 
 typedef struct {
+    const char *name;
+    const char *purpose;
+} PipelineStage;
+
+typedef struct {
+    const char *stage;
+    const char *owner;
+    const char *responsibility;
+    const char *output;
+} StageResponsibility;
+
+typedef struct {
     const char *base_path;
     const char *json_path;
     const char *md_path;
@@ -34,6 +46,7 @@ typedef struct {
     long max_size;
     const char *exts[MAX_EXTS];
     size_t ext_count;
+    int owns_exts;
 } Config;
 
 typedef struct {
@@ -157,6 +170,28 @@ static const Layer layers[7] = {
     {"Camada 7 - Harmonia", layer7_modules, sizeof(layer7_modules) / sizeof(layer7_modules[0])}
 };
 
+static const PipelineStage pipeline_stages[] = {
+    {"BOOTSTRAP", "Inicializa contexto e valida configuracoes"},
+    {"DISCOVERY", "Navega a arvore e coleta candidatos"},
+    {"FILTER", "Aplica regras de extensao e limites"},
+    {"METADATA", "Captura estatisticas e tamanho"},
+    {"HASHING", "Gera SHA3 quando habilitado"},
+    {"INDEX", "Escreve entrada JSON"},
+    {"REPORT", "Escreve entrada Markdown"},
+    {"SUMMARY", "Consolida metadados e metrics"}
+};
+
+static const StageResponsibility pipeline_responsibilities[] = {
+    {"BOOTSTRAP", "CONFIG_GATE", "Carregar defaults, flags e base path", "Config efetiva"},
+    {"DISCOVERY", "SCAN_ENGINE", "Percorrer diretorios e identificar candidatos", "Lista de caminhos"},
+    {"FILTER", "FILTER_ENGINE", "Aplicar extensoes, hidden, depth e size", "Candidatos filtrados"},
+    {"METADATA", "STAT_ENGINE", "Extrair tamanho, tipo e erros", "Metadados basicos"},
+    {"HASHING", "HASH_ENGINE", "Gerar SHA3 quando habilitado", "Digest SHA3"},
+    {"INDEX", "JSON_ENGINE", "Persistir registros no JSON", "Indice JSON"},
+    {"REPORT", "REPORT_ENGINE", "Persistir linhas Markdown", "Relatorio MD"},
+    {"SUMMARY", "SUMMARY_ENGINE", "Consolidar estatisticas finais", "Sumario executivo"}
+};
+
 static void print_usage(const char *prog) {
     printf("Uso: %s [opcoes]\n", prog);
     printf("  --base <path>          Diretorio base (padrao .)\n");
@@ -170,6 +205,8 @@ static void print_usage(const char *prog) {
     printf("  --no-hash              Desativa SHA3\n");
     printf("  --no-architecture      Remove matriz arquitetural\n");
     printf("  --no-opportunities     Remove catalogo de oportunidades\n");
+    printf("  --no-pipeline          Remove pipeline de orquestracao\n");
+    printf("  --no-responsibilities  Remove matriz de responsabilidades\n");
     printf("  --help                 Exibe esta ajuda\n");
 }
 
@@ -301,9 +338,12 @@ static void parse_extensions(Config *cfg, const char *list) {
     if (!copy) return;
     char *token = strtok(copy, ",");
     cfg->ext_count = 0;
+    cfg->owns_exts = 1;
     while (token && cfg->ext_count < MAX_EXTS) {
         while (*token == ' ') token++;
-        cfg->exts[cfg->ext_count++] = strdup(token);
+        char *ext = strdup(token);
+        if (!ext) break;
+        cfg->exts[cfg->ext_count++] = ext;
         token = strtok(NULL, ",");
     }
     free(copy);
@@ -311,9 +351,18 @@ static void parse_extensions(Config *cfg, const char *list) {
 
 static void load_default_extensions(Config *cfg) {
     cfg->ext_count = sizeof(default_exts) / sizeof(default_exts[0]);
+    cfg->owns_exts = 0;
     for (size_t i = 0; i < cfg->ext_count; i++) {
         cfg->exts[i] = default_exts[i];
     }
+}
+
+static void free_extensions(Config *cfg) {
+    if (!cfg->owns_exts) return;
+    for (size_t i = 0; i < cfg->ext_count; i++) {
+        free((void *)cfg->exts[i]);
+    }
+    cfg->owns_exts = 0;
 }
 
 static void write_architecture(FILE *md_out) {
@@ -327,6 +376,28 @@ static void write_architecture(FILE *md_out) {
         }
         fprintf(md_out, "\n");
     }
+}
+
+static void write_pipeline(FILE *md_out) {
+    fprintf(md_out, "\n## Pipeline de orquestracao (low level)\n\n");
+    fprintf(md_out, "| Etapa | Propósito |\n| --- | --- |\n");
+    for (size_t i = 0; i < sizeof(pipeline_stages) / sizeof(pipeline_stages[0]); i++) {
+        fprintf(md_out, "| %s | %s |\n", pipeline_stages[i].name, pipeline_stages[i].purpose);
+    }
+    fprintf(md_out, "\n");
+}
+
+static void write_responsibilities(FILE *md_out) {
+    fprintf(md_out, "\n## Matriz de responsabilidades (cada etapa tem o que fazer)\n\n");
+    fprintf(md_out, "| Etapa | Responsavel | Responsabilidade | Saida |\n| --- | --- | --- | --- |\n");
+    for (size_t i = 0; i < sizeof(pipeline_responsibilities) / sizeof(pipeline_responsibilities[0]); i++) {
+        fprintf(md_out, "| %s | %s | %s | %s |\n",
+                pipeline_responsibilities[i].stage,
+                pipeline_responsibilities[i].owner,
+                pipeline_responsibilities[i].responsibility,
+                pipeline_responsibilities[i].output);
+    }
+    fprintf(md_out, "\n");
 }
 
 static void write_opportunities(FILE *md_out) {
@@ -359,6 +430,8 @@ int main(int argc, char **argv) {
     cfg.hash_enabled = 1;
     cfg.emit_architecture = 1;
     cfg.emit_opportunities = 1;
+    int emit_pipeline = 1;
+    int emit_responsibilities = 1;
     cfg.max_depth = -1;
     cfg.max_size = -1;
     load_default_extensions(&cfg);
@@ -386,6 +459,10 @@ int main(int argc, char **argv) {
             cfg.emit_architecture = 0;
         } else if (!strcmp(argv[i], "--no-opportunities")) {
             cfg.emit_opportunities = 0;
+        } else if (!strcmp(argv[i], "--no-pipeline")) {
+            emit_pipeline = 0;
+        } else if (!strcmp(argv[i], "--no-responsibilities")) {
+            emit_responsibilities = 0;
         } else if (!strcmp(argv[i], "--help")) {
             print_usage(argv[0]);
             return 0;
@@ -403,6 +480,7 @@ int main(int argc, char **argv) {
         fprintf(stderr, "Erro abrindo arquivos de saida: %s\n", strerror(errno));
         if (json_out) fclose(json_out);
         if (md_out) fclose(md_out);
+        free_extensions(&cfg);
         return 1;
     }
 
@@ -422,12 +500,21 @@ int main(int argc, char **argv) {
         write_architecture(md_out);
     }
 
+    if (emit_pipeline) {
+        write_pipeline(md_out);
+    }
+
+    if (emit_responsibilities) {
+        write_responsibilities(md_out);
+    }
+
     if (cfg.emit_opportunities) {
         write_opportunities(md_out);
     }
 
     fclose(json_out);
     fclose(md_out);
+    free_extensions(&cfg);
 
     printf("[OK] Generated:\n");
     printf(" - %s\n", cfg.json_path);
