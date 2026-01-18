@@ -5,6 +5,7 @@ O projeto **GAIA-Ω** organiza um ecossistema experimental em C e Python voltado
 
 ## Auditoria de estabilidade
 - [Auditoria de Estabilidade — GAIA-Ω (documento navegável)](docs/AUDITORIA_CORE_ESTAVEL.md)
+- [GAIA_phi como framework experimental — roteiro reproduzível](docs/ROTEIRO_EXPERIMENTAL_GAIA_CORE.md)
 
 ---
 
