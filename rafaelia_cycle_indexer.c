@@ -46,6 +46,7 @@ typedef struct {
     long max_size;
     const char *exts[MAX_EXTS];
     size_t ext_count;
+    int owns_exts;
 } Config;
 
 typedef struct {
@@ -337,9 +338,12 @@ static void parse_extensions(Config *cfg, const char *list) {
     if (!copy) return;
     char *token = strtok(copy, ",");
     cfg->ext_count = 0;
+    cfg->owns_exts = 1;
     while (token && cfg->ext_count < MAX_EXTS) {
         while (*token == ' ') token++;
-        cfg->exts[cfg->ext_count++] = strdup(token);
+        char *ext = strdup(token);
+        if (!ext) break;
+        cfg->exts[cfg->ext_count++] = ext;
         token = strtok(NULL, ",");
     }
     free(copy);
@@ -347,9 +351,18 @@ static void parse_extensions(Config *cfg, const char *list) {
 
 static void load_default_extensions(Config *cfg) {
     cfg->ext_count = sizeof(default_exts) / sizeof(default_exts[0]);
+    cfg->owns_exts = 0;
     for (size_t i = 0; i < cfg->ext_count; i++) {
         cfg->exts[i] = default_exts[i];
     }
+}
+
+static void free_extensions(Config *cfg) {
+    if (!cfg->owns_exts) return;
+    for (size_t i = 0; i < cfg->ext_count; i++) {
+        free((void *)cfg->exts[i]);
+    }
+    cfg->owns_exts = 0;
 }
 
 static void write_architecture(FILE *md_out) {
@@ -467,6 +480,7 @@ int main(int argc, char **argv) {
         fprintf(stderr, "Erro abrindo arquivos de saida: %s\n", strerror(errno));
         if (json_out) fclose(json_out);
         if (md_out) fclose(md_out);
+        free_extensions(&cfg);
         return 1;
     }
 
@@ -500,6 +514,7 @@ int main(int argc, char **argv) {
 
     fclose(json_out);
     fclose(md_out);
+    free_extensions(&cfg);
 
     printf("[OK] Generated:\n");
     printf(" - %s\n", cfg.json_path);
