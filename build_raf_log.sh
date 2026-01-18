@@ -3,7 +3,8 @@
 # RAFAELIA_EVENT_LOG: Log de Eventos Encadeado (Imutável + Auditável)
 # =============================================================================
 
-BASE_DIR=~/gaia_omega_build
+BASE_DIR=${BASE_DIR:-$(pwd)/gaia_omega_build}
+mkdir -p "$BASE_DIR"
 cd "$BASE_DIR" || exit 1
 
 mkdir -p headers
