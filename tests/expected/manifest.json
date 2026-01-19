@@ -1,0 +1,27 @@
+{
+  "root": "tests/fixtures/sample",
+  "filters": {
+    "extensions": [
+      ".c",
+      ".txt"
+    ]
+  },
+  "summary": {
+    "files": 2,
+    "bytes": 28,
+    "errors": 0
+  },
+  "errors": [],
+  "entries": [
+    {
+      "path": "a.txt",
+      "size": 6,
+      "sha3_256": "78ba0c354ff15c2c2423ef5fe725bd990cef933d75b970febe1ad7384fcfd518"
+    },
+    {
+      "path": "b.c",
+      "size": 22,
+      "sha3_256": "3d640acb3302a3d49a7d642959273e58c16740a1f5039f98519095779665a648"
+    }
+  ]
+}

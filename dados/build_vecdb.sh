@@ -7,7 +7,8 @@
 #   - gaia_vec_query  : consulta por similaridade
 # =============================================================================
 
-BASE_DIR=~/gaia_omega_build
+BASE_DIR=${BASE_DIR:-$(pwd)/gaia_omega_build}
+mkdir -p "$BASE_DIR"
 cd "$BASE_DIR" || exit 1
 
 mkdir -p headers
@@ -528,4 +529,3 @@ echo ""
 echo "   -> Resultado: Top-K vetores mais próximos em memória,"
 echo "      pronto pra Nano-GPT estilo 'vetor, vetor, verbo'."
 echo "=================================================="
-
