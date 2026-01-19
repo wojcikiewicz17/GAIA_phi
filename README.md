@@ -6,6 +6,7 @@ O projeto **GAIA-Ω** organiza um ecossistema experimental em C e Python voltado
 ## Auditoria de estabilidade
 - [Auditoria de Estabilidade — GAIA-Ω (documento navegável)](docs/AUDITORIA_CORE_ESTAVEL.md)
 - [GAIA_phi como framework experimental — roteiro reproduzível](docs/ROTEIRO_EXPERIMENTAL_GAIA_CORE.md)
+- [Árvore estrutural de arquivos (inventário completo)](docs/ARVORE_ESTRUTURAL.md)
 
 ---
 
@@ -91,6 +92,29 @@ manifest
 
 ```bash
 bash tests/run_tests.sh
+```
+
+---
+
+## RAFAELIA_CYCLE (tool extra em C)
+
+Ferramenta adicional para indexação determinística com SHA3‑256 e relatórios JSON/JSONL/MD/CSV.
+
+### Build (Linux)
+```bash
+sudo apt-get install -y gcc libssl-dev
+gcc -O2 -Wall -Wextra rafaelia_cycle.c -o rafaelia_cycle -lssl -lcrypto
+```
+
+### Build (Termux)
+```bash
+pkg install -y clang openssl
+clang -O2 -Wall -Wextra rafaelia_cycle.c -o rafaelia_cycle -lssl -lcrypto
+```
+
+### Execução
+```bash
+./rafaelia_cycle --base . --out-dir out --ext .c,.h,.py
 ```
 
 ---
