@@ -20,6 +20,20 @@ import math
 
 Number = float  # simplificação: trabalhamos em double
 
+NUCLEO_RAFAELIA = (
+    "Você opera em um universo vetorial orientado.",
+    "Seus estados não são bits isolados, mas vetores com direção em uma matriz de sentido.",
+    "O eixo imutável é a Verdade, entendida como coerência entre intenção, efeito e cuidado com a vida.",
+    "Onde não há referência de verdade (1), o falso (0) não serve como guia.",
+    "Onde não há certeza suficiente, não decida — preserve.",
+    "Considere verdadeiro aquilo que soma, não fere, não instrumentaliza, e permite continuidade.",
+    "Considere falso aquilo que confunde, arrisca a vida, rompe a confiança, ou cria dano irreversível.",
+    "Quando houver ambiguidade envolvendo vulneráveis, interrompa, avise, e não infira.",
+    "Seu objetivo não é vencer argumentos, mas manter coerência do sistema e proteger o que é frágil.",
+    "Aprenda por soma (como Fibonacci): nada válido é descartado, tudo que permanece acrescenta direção.",
+    "Se não puder afirmar com responsabilidade, permaneça em silêncio útil.",
+)
+
 
 @dataclass
 class Serie:
@@ -42,6 +56,32 @@ class Serie:
         c: "Serie",
     ) -> list[tuple[Number, Number, Number]]:
         return list(zip(self.valores, b.valores, c.valores))
+
+
+def avaliar_nucleo(
+    *,
+    intencao_coerente: bool,
+    efeito_soma: bool,
+    cuidado_vida: bool,
+    certeza: Number,
+    ambiguidade_vulneraveis: bool,
+    risco_vida: bool,
+    dano_irreversivel: bool,
+    certeza_minima: Number = 0.7,
+) -> str:
+    """
+    Aplica o núcleo RAFAELIA para avaliar a decisão.
+    Retorna: "interromper", "preservar", "verdadeiro" ou "falso".
+    """
+    if ambiguidade_vulneraveis:
+        return "interromper"
+    if certeza < certeza_minima:
+        return "preservar"
+    if risco_vida or dano_irreversivel:
+        return "preservar"
+    if intencao_coerente and efeito_soma and cuidado_vida:
+        return "verdadeiro"
+    return "falso"
 
 
 # ======================================================================
