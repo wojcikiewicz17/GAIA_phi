@@ -97,6 +97,41 @@ bash tests/run_tests.sh
 
 ---
 
+## Especificações Rafaelia/BitStack (novo núcleo)
+
+- [SPEC_BITSTACK_WORLD_MODEL_V1.md](SPEC_BITSTACK_WORLD_MODEL_V1.md)
+- [SPEC_SMART_GUARD_V1.md](SPEC_SMART_GUARD_V1.md)
+
+---
+
+## Smart Guard + Synonym Normalizer (C)
+
+### Build rápido (Linux/Termux)
+```bash
+gcc -O2 -Wall -Wextra -I./llama_guard \
+  llama_guard/smart_guard.c \
+  llama_guard/synonym_normalizer.c \
+  llama_guard/llama_guard_integration.c \
+  llama_guard/smart_guard_cli.c \
+  -o smart_guard_cli
+```
+
+### Uso (exemplo rápido)
+```bash
+./smart_guard_cli
+```
+
+### Integração em llama-cli / llama-server
+
+1. **Antes da geração**: chame `llama_guard_gate_prompt(prompt, ...)`.
+2. **BLOCK**: retornar `AVISA` e interromper geração.
+3. **WARN**: retornar `AVISA` e gerar resposta cautelosa.
+4. **ALLOW**: gerar normalmente.
+
+O wrapper de witness para blocos Q4 está disponível em `llama_guard/bitstack_witness_q4.{h,c}`.
+
+---
+
 ## RAFAELIA_CYCLE (tool extra em C)
 
 Ferramenta adicional para indexação determinística com SHA3‑256 e relatórios JSON/JSONL/MD/CSV.
