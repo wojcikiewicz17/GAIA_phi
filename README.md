@@ -8,6 +8,7 @@ O projeto **GAIA-Ω** organiza um ecossistema experimental em C e Python voltado
 - [GAIA_phi como framework experimental — roteiro reproduzível](docs/ROTEIRO_EXPERIMENTAL_GAIA_CORE.md)
 - [Árvore estrutural de arquivos (inventário completo)](docs/ARVORE_ESTRUTURAL.md)
 - [Análise de oportunidades, operações e inovações](docs/ANALISE_OPORTUNIDADES_OPERACOES.md)
+- [GAIA‑Φ — Manifesto Técnico e Arquitetural (porta de entrada)](docs/GAIA_PHI_MANIFESTO_TECNICO.md)
 
 ---
 
