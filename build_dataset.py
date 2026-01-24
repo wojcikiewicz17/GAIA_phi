@@ -459,6 +459,59 @@ def extract_links(text: str) -> List[str]:
     return URL_RE.findall(text)
 
 
+def extract_images(record: Dict[str, Any]) -> List[Dict[str, str]]:
+    images: List[Dict[str, str]] = []
+
+    def add_image(ref: Optional[str], caption: Optional[str] = None) -> None:
+        if not ref:
+            return
+        entry = {"ref": str(ref)}
+        if caption:
+            entry["caption"] = str(caption)
+        images.append(entry)
+
+    if isinstance(record.get("images"), list):
+        for item in record["images"]:
+            if isinstance(item, dict):
+                add_image(item.get("ref") or item.get("url") or item.get("image_url"), item.get("caption"))
+            elif isinstance(item, str):
+                add_image(item)
+
+    if isinstance(record.get("image"), dict):
+        image = record["image"]
+        add_image(image.get("ref") or image.get("url") or image.get("image_url"), image.get("caption"))
+    elif isinstance(record.get("image"), str):
+        add_image(record.get("image"))
+
+    if isinstance(record.get("attachments"), list):
+        for item in record["attachments"]:
+            if not isinstance(item, dict):
+                continue
+            if item.get("type") in {"image", "image/png", "image/jpeg"} or item.get("image_url"):
+                add_image(item.get("url") or item.get("image_url") or item.get("ref"), item.get("caption"))
+
+    content = record.get("content")
+    if isinstance(content, dict):
+        parts = content.get("parts")
+        if isinstance(parts, list):
+            for part in parts:
+                if isinstance(part, dict):
+                    add_image(part.get("image_url") or part.get("url") or part.get("ref"), part.get("caption"))
+
+    if not images:
+        return []
+
+    seen = set()
+    unique_images = []
+    for item in images:
+        ref = item.get("ref")
+        if not ref or ref in seen:
+            continue
+        seen.add(ref)
+        unique_images.append(item)
+    return unique_images
+
+
 def normalize_event(
     record: Dict[str, Any],
     *,
@@ -489,7 +542,7 @@ def normalize_event(
         "timestamp": timestamp,
         "role": role,
         "text": text or None,
-        "images": record.get("images") if isinstance(record.get("images"), list) else [],
+        "images": extract_images(record),
         "links": extract_links(text),
         "tags": tags,
         "symbols": symbols,
@@ -819,6 +872,7 @@ def main() -> None:
                                             "discernment": event["discernment"],
                                             "weight": event["weight"],
                                             "source": event["source_path"],
+                                            "images": event.get("images", []),
                                         },
                                     }
                                     split = choose_split(
@@ -842,6 +896,7 @@ def main() -> None:
                                             "discernment": event["discernment"],
                                             "weight": event["weight"],
                                             "source": event["source_path"],
+                                            "images": event.get("images", []),
                                         },
                                     }
                                     split = choose_split(
@@ -866,6 +921,7 @@ def main() -> None:
                                             "weight": min(3.0, event["weight"] + 0.5),
                                             "source": event["source_path"],
                                             "synthetic": True,
+                                            "images": event.get("images", []),
                                         },
                                     }
                                     split = choose_split(

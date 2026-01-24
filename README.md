@@ -123,6 +123,7 @@ python build_dataset.py --out out \\
 - **Holdout temporal**: se timestamps existirem, usa os últimos 10% do tempo para `eval` (duas passagens para estimar janela).
 - **Dedup**: hashes persistidos em `out/dedup.sqlite` para não exceder RAM.
 - **Memória alvo**: < 300MB (depende do volume de tags/estatísticas amostradas).
+- **Imagens**: o compilador captura referências de imagens em `images`, `image`, `attachments` e `content.parts`, inserindo `ref`/`caption` nos eventos e nos exemplos em `meta.images`.
 
 ## Especificações Rafaelia/BitStack (novo núcleo)
 
