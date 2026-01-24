@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "RAFAELIA Normalized Event",
+  "type": "object",
+  "required": [
+    "id",
+    "type",
+    "source_zip",
+    "source_path",
+    "timestamp",
+    "role",
+    "text",
+    "images",
+    "links",
+    "tags",
+    "symbols",
+    "ethica",
+    "discernment",
+    "weight",
+    "hash"
+  ],
+  "properties": {
+    "id": {"type": "string", "description": "Stable hash"},
+    "type": {
+      "type": "string",
+      "enum": [
+        "message",
+        "conversation",
+        "metric_event",
+        "dashboard_event",
+        "index_event",
+        "raw_event"
+      ]
+    },
+    "source_zip": {"type": "string"},
+    "source_path": {"type": "string"},
+    "timestamp": {"type": ["string", "null"]},
+    "role": {"type": ["string", "null"]},
+    "text": {"type": ["string", "null"]},
+    "images": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "ref": {"type": "string"},
+          "caption": {"type": "string"}
+        }
+      }
+    },
+    "links": {"type": "array", "items": {"type": "string"}},
+    "tags": {"type": "array", "items": {"type": "string"}},
+    "symbols": {"type": "array", "items": {"type": "string"}},
+    "ethica": {"type": "array", "items": {"type": "string"}},
+    "discernment": {
+      "type": "object",
+      "required": ["serpent", "dove", "curvature", "fit"],
+      "properties": {
+        "serpent": {"type": "number", "minimum": 0, "maximum": 1},
+        "dove": {"type": "number", "minimum": 0, "maximum": 1},
+        "curvature": {"type": "number", "minimum": 0, "maximum": 1},
+        "fit": {"type": "number", "minimum": 0, "maximum": 1}
+      }
+    },
+    "weight": {"type": "number", "minimum": 0.1, "maximum": 3.0},
+    "hash": {"type": "string"}
+  }
+}
