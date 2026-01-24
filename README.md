@@ -98,6 +98,32 @@ bash tests/run_tests.sh
 
 ---
 
+## RAFAELIA Dataset Compiler v1.1
+
+Pipeline para compilar datasets a partir de grandes arquivos ZIP com múltiplos JSON/JSONL/CSV, usando streaming e normalização em schema único (sem extração integral em disco). O compilador substitui o conceito central de “risk” por **discernment** (prudência serpente/pomba).
+
+### Uso
+```bash
+python build_dataset.py --out out \\
+  --zips /mnt/data/1234.zip /mnt/data/567.zip /mnt/data/8910.zip \\
+  --seed 4242 \\
+  --max-json-load-mb 50
+```
+
+### Saídas
+- `out/index_<zipname>.jsonl` — index dos membros do zip e estratégia de parsing.
+- `out/manifest.jsonl` — eventos normalizados em schema único.
+- `out/train.jsonl` e `out/eval.jsonl` — exemplos de treino/validação.
+- `out/stats.md` — estatísticas agregadas.
+- `out/errors.log` — erros e arquivos ignorados.
+
+### Limites e notas
+- **Sem extração total**: leitura via `ZipFile.open()` e streaming incremental.
+- **JSON grande**: para arquivos > 50MB usa `ijson` quando disponível. Caso contrário, tenta JSONL e registra fallback.
+- **Holdout temporal**: se timestamps existirem, usa os últimos 10% do tempo para `eval` (duas passagens para estimar janela).
+- **Dedup**: hashes persistidos em `out/dedup.sqlite` para não exceder RAM.
+- **Memória alvo**: < 300MB (depende do volume de tags/estatísticas amostradas).
+
 ## Especificações Rafaelia/BitStack (novo núcleo)
 
 - [SPEC_BITSTACK_WORLD_MODEL_V1.md](SPEC_BITSTACK_WORLD_MODEL_V1.md)
