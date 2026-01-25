@@ -1,5 +1,6 @@
 #include "gaia_vecdb.h"
 #include "gaia_metric.h"
+#include <string.h>
 
 GaiaStatus gaia_vecdb_init(GaiaVecDB *db,
                            float *storage,
@@ -21,7 +22,6 @@ GaiaStatus gaia_vecdb_init(GaiaVecDB *db,
 
 GaiaStatus gaia_vecdb_insert(GaiaVecDB *db, const GaiaVector *v, uint64_t id) {
     uint32_t idx = 0;
-    uint32_t i = 0;
     float *dst = 0;
     if (!db || !v || !v->data) {
         return GAIA_ERR_NULL;
@@ -34,9 +34,7 @@ GaiaStatus gaia_vecdb_insert(GaiaVecDB *db, const GaiaVector *v, uint64_t id) {
     }
     idx = db->header.count;
     dst = db->storage + (idx * db->header.dim);
-    for (i = 0; i < db->header.dim; i++) {
-        dst[i] = v->data[i];
-    }
+    memcpy(dst, v->data, (size_t)db->header.dim * sizeof(float));
     db->ids[idx] = id;
     db->header.count++;
     return GAIA_OK;
@@ -46,24 +44,29 @@ GaiaStatus gaia_vecdb_query(GaiaVecDB *db, const GaiaVector *query,
                             uint64_t *out_ids, float *out_scores, uint32_t limit) {
     uint32_t i = 0;
     uint32_t j = 0;
+    uint32_t dim = 0;
     if (!db || !query || !out_ids || !out_scores) {
         return GAIA_ERR_NULL;
     }
     if (query->dim != db->header.dim || limit == 0) {
         return GAIA_ERR_BAD_DIM;
     }
+    dim = db->header.dim;
     for (i = 0; i < limit; i++) {
         out_ids[i] = 0;
         out_scores[i] = -1.0f;
     }
     for (i = 0; i < db->header.count; i++) {
         GaiaVector vec;
-        vec.data = db->storage + (i * db->header.dim);
-        vec.dim = db->header.dim;
-        vec.cap = db->header.dim;
+        vec.data = db->storage + (i * dim);
+        vec.dim = dim;
+        vec.cap = dim;
         vec.flags = 0;
         {
             float score = gaia_metric_cosine(query, &vec);
+            if (score <= out_scores[limit - 1]) {
+                continue;
+            }
             for (j = 0; j < limit; j++) {
                 if (score > out_scores[j]) {
                     uint32_t k = 0;
