@@ -45,6 +45,9 @@ GaiaStatus gaia_nexus_scan(GaiaNexus *nx, const GaiaVector *query,
     }
     for (i = 0; i < nx->count; i++) {
         float score = gaia_metric_cosine(query, &nx->vectors[i]);
+        if (score <= out_scores[limit - 1]) {
+            continue;
+        }
         for (j = 0; j < limit; j++) {
             if (score > out_scores[j]) {
                 uint32_t k = 0;

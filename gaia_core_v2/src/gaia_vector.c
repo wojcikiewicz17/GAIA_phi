@@ -1,5 +1,6 @@
 #include "gaia_vector.h"
 #include "gaia_projection.h"
+#include <string.h>
 
 GaiaStatus gaia_vector_init(GaiaVector *v, float *buffer, uint32_t dim) {
     if (!v || !buffer || dim == 0) {
@@ -24,13 +25,10 @@ GaiaStatus gaia_vector_resize(GaiaVector *v, uint32_t dim) {
 }
 
 GaiaStatus gaia_vector_zero(GaiaVector *v) {
-    uint32_t i = 0;
     if (!v || !v->data) {
         return GAIA_ERR_NULL;
     }
-    for (i = 0; i < v->dim; i++) {
-        v->data[i] = 0.0f;
-    }
+    memset(v->data, 0, (size_t)v->dim * sizeof(float));
     return GAIA_OK;
 }
 
@@ -40,8 +38,11 @@ float gaia_vector_dot(const GaiaVector *a, const GaiaVector *b) {
     if (!a || !b || !a->data || !b->data || a->dim != b->dim) {
         return 0.0f;
     }
-    for (i = 0; i < a->dim; i++) {
-        sum += a->data[i] * b->data[i];
+    const float *ap = a->data;
+    const float *bp = b->data;
+    uint32_t dim = a->dim;
+    for (i = 0; i < dim; i++) {
+        sum += ap[i] * bp[i];
     }
     return sum;
 }
@@ -53,8 +54,11 @@ GaiaStatus gaia_vector_normalize(GaiaVector *v) {
     if (!v || !v->data) {
         return GAIA_ERR_NULL;
     }
-    for (i = 0; i < v->dim; i++) {
-        sum += v->data[i] * v->data[i];
+    float *data = v->data;
+    uint32_t dim = v->dim;
+    for (i = 0; i < dim; i++) {
+        float value = data[i];
+        sum += value * value;
     }
     if (sum <= 0.0f) {
         return GAIA_ERR_RANGE;
@@ -63,8 +67,8 @@ GaiaStatus gaia_vector_normalize(GaiaVector *v) {
     for (i = 0; i < 4; i++) {
         inv = inv * (1.5f - 0.5f * sum * inv * inv);
     }
-    for (i = 0; i < v->dim; i++) {
-        v->data[i] *= inv;
+    for (i = 0; i < dim; i++) {
+        data[i] *= inv;
     }
     return GAIA_OK;
 }
