@@ -16,6 +16,7 @@ typedef struct {
     GaiaVecDBHeader header;
     float *storage;
     uint64_t *ids;
+    float *inv_norms;
 } GaiaVecDB;
 
 GaiaStatus gaia_vecdb_init(GaiaVecDB *db,
@@ -24,6 +25,13 @@ GaiaStatus gaia_vecdb_init(GaiaVecDB *db,
                            uint32_t capacity,
                            uint32_t dim,
                            uint32_t quant_bits);
+GaiaStatus gaia_vecdb_init_with_norms(GaiaVecDB *db,
+                                      float *storage,
+                                      uint64_t *ids,
+                                      float *inv_norms,
+                                      uint32_t capacity,
+                                      uint32_t dim,
+                                      uint32_t quant_bits);
 GaiaStatus gaia_vecdb_insert(GaiaVecDB *db, const GaiaVector *v, uint64_t id);
 GaiaStatus gaia_vecdb_query(GaiaVecDB *db, const GaiaVector *query,
                             uint64_t *out_ids, float *out_scores, uint32_t limit);
