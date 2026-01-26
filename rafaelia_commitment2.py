@@ -55,6 +55,25 @@ def mean_std(xs: List[float]) -> Tuple[float, float]:
     return float(statistics.fmean(xs)), float(statistics.pstdev(xs))
 
 
+def clamp01(x: float) -> float:
+    return max(0.0, min(1.0, x))
+
+
+def coerencia_estabilidade(media: float, desvio: float, epsilon: float = 1e-9) -> float:
+    """Mede consistência do sinal (1 = estável, 0 = disperso)."""
+    return clamp01(1.0 - (desvio / (abs(media) + epsilon)))
+
+
+def coerencia_melhoria(metrica_modelo: float, metrica_baseline: float, epsilon: float = 1e-9) -> float:
+    """Coerência relativa quando menor é melhor (ex.: MSE)."""
+    return clamp01(1.0 - (metrica_modelo / (metrica_baseline + epsilon)))
+
+
+def coerencia_relativa(delta: float, baseline: float, epsilon: float = 1e-9) -> float:
+    """Coerência relativa quando maior é melhor (ex.: clustering)."""
+    return clamp01(delta / (abs(baseline) + epsilon))
+
+
 def seed_all(seed: int) -> None:
     random.seed(seed)
 
@@ -179,6 +198,8 @@ def geometry_experiment(seed: int, params: Dict[str, Any]) -> Result:
         details={
             "std": sd,
             "baseline_std": bsd,
+            "coerencia_estabilidade": coerencia_estabilidade(mu, sd),
+            "coerencia_estabilidade_baseline": coerencia_estabilidade(bmu, bsd),
             "trials": trials,
             "bins": bins,
             "margin": margin,
@@ -268,6 +289,7 @@ def series_experiment(seed: int, params: Dict[str, Any]) -> Result:
             "w": w,
             "baseline_mse": b_mse,
             "model_mse": a_mse,
+            "coerencia_melhoria": coerencia_melhoria(a_mse, b_mse),
             "margin": margin,
             "note": "Metric is improvement in MSE vs baseline (positive is better).",
         },
@@ -358,6 +380,7 @@ def graph_experiment(seed: int, params: Dict[str, Any]) -> Result:
             "n": n,
             "k": k,
             "p": p,
+            "coerencia_relativa": coerencia_relativa(delta, c_rand),
             "margin": margin,
             "note": "Metric: clustering(struct) - clustering(random).",
         },

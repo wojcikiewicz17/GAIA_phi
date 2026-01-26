@@ -58,6 +58,25 @@ def mean_std(xs: List[float]) -> Tuple[float, float]:
     return mu, sd
 
 
+def clamp01(x: float) -> float:
+    return max(0.0, min(1.0, x))
+
+
+def coerencia_estabilidade(media: float, desvio: float, epsilon: float = 1e-9) -> float:
+    """Mede consistência do sinal (1 = estável, 0 = disperso)."""
+    return clamp01(1.0 - (desvio / (abs(media) + epsilon)))
+
+
+def coerencia_melhoria(metrica_modelo: float, metrica_baseline: float, epsilon: float = 1e-9) -> float:
+    """Coerência relativa quando menor é melhor (ex.: MSE)."""
+    return clamp01(1.0 - (metrica_modelo / (metrica_baseline + epsilon)))
+
+
+def coerencia_relativa(delta: float, baseline: float, epsilon: float = 1e-9) -> float:
+    """Coerência relativa quando maior é melhor (ex.: clustering)."""
+    return clamp01(delta / (abs(baseline) + epsilon))
+
+
 # -----------------------------
 # Commitment schema
 # -----------------------------
@@ -159,6 +178,8 @@ def geometry_experiment(seed: int, params: Dict[str, Any]) -> Result:
         details={
             "std": sd,
             "baseline_std": bsd,
+            "coerencia_estabilidade": coerencia_estabilidade(mu, sd),
+            "coerencia_estabilidade_baseline": coerencia_estabilidade(bmu, bsd),
             "trials": trials,
             "margin": margin,
             "note": "Numeric signature of 2-square rotation: radii split into near/far groups."
@@ -226,6 +247,7 @@ def series_experiment(seed: int, params: Dict[str, Any]) -> Result:
         details={
             "mse_model": mse_a,
             "mse_baseline": mse_b,
+            "coerencia_melhoria": coerencia_melhoria(mse_a, mse_b),
             "N": N,
             "margin": margin,
             "note": "This is a scaffold. Replace pred_a with your true Fibonacci/Bitraf oscillator."
@@ -330,6 +352,7 @@ def graph_experiment(seed: int, params: Dict[str, Any]) -> Result:
             "n": n,
             "edges": m,
             "p_est": p,
+            "coerencia_relativa": coerencia_relativa(cc - rcc, rcc),
             "margin": margin,
             "note": "Motif-graph should cluster more than a matched random graph."
         },
