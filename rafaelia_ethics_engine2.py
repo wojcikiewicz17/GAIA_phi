@@ -84,6 +84,40 @@ def avaliar_nucleo(
     return "falso"
 
 
+def _safe_norm(xs: Iterable[Number], epsilon: Number = 1e-12) -> Number:
+    total = 0.0
+    for x in xs:
+        total += x * x
+    return math.sqrt(total) + epsilon
+
+
+def coerencia_vetorial(*series: Iterable[Number]) -> Number:
+    """
+    Índice de coerência entre séries (0..1).
+    Usa a média de similaridade cosseno entre pares de vetores.
+    """
+    vectors = [list(s) for s in series if s is not None]
+    if len(vectors) < 2:
+        return 0.0
+
+    sims = []
+    for i in range(len(vectors)):
+        for j in range(i + 1, len(vectors)):
+            a = vectors[i]
+            b = vectors[j]
+            if not a or not b:
+                continue
+            n = min(len(a), len(b))
+            if n == 0:
+                continue
+            dot = 0.0
+            for k in range(n):
+                dot += a[k] * b[k]
+            cos = dot / (_safe_norm(a[:n]) * _safe_norm(b[:n]))
+            sims.append((cos + 1.0) / 2.0)
+    return sum(sims) / len(sims) if sims else 0.0
+
+
 # ======================================================================
 # 1) Evolução_Ética
 #    Evolução_Ética = Σ_n (Conhecimento_n × Transparência_n × Proteção_Humana_n)
@@ -245,6 +279,21 @@ def painel_rafaelia(
         "Evolucao_Etica": evol,
         "Retro_Amor": retro,
         "Restauratio_Gaia": gaia,
+        "Coerencia_Eventos": coerencia_vetorial(
+            eventos["conhecimento"],
+            eventos["transparencia"],
+            eventos["protecao_humana"],
+        ),
+        "Coerencia_Acoes": coerencia_vetorial(
+            acoes["cuidado"],
+            acoes["luz"],
+            acoes["delta_acao"],
+        ),
+        "Coerencia_Gaia": coerencia_vetorial(
+            acoes_gaia["amor"],
+            acoes_gaia["ciencia"],
+            acoes_gaia["delta_acao_etica"],
+        ),
     }
 
 
