@@ -184,6 +184,8 @@ Gera `raf_event_log.h` e `raf_event_log.c`, provendo um log encadeado verificáv
 ### 7.3. Binários/executáveis pré‑compilados
 Existem executáveis sem extensão (ex.: `gaia_boot`, `gaia_vec_build`, `gaia_vec_query`, `gaia_nanogpt`, `gaia_d`, `gaia_visual`, `gaia_client`, `gaia_zipraf_inspect`, etc.) tanto na raiz quanto dentro de `dados/`. Estes binários refletem o resultado de builds anteriores e devem ser tratados como artefatos prontos para execução ou inspeção.
 
+> **Nota prática**: caso você precise inventariar arquivos sem extensão junto com o código (incluindo textos auxiliares), o CLI `gaia_core.py` possui a flag `--include-no-ext` para combinar com `--ext`.
+
 ### 7.4. Fluxos de uso (exemplos práticos)
 - **Ingestão básica no Nexus**: usar `gaia_ingest` com `dummy_data.txt` para popular a memória mapeada.
 - **Visualização radar**: `gaia_visual` renderiza a distribuição dos vetores no terminal.

@@ -70,6 +70,7 @@ def build_manifest(
     exclude_dirs: set[str],
     prefer_openssl: bool,
     strict: bool,
+    include_no_ext: bool,
 ) -> tuple[list[ManifestEntry], dict[str, int], list[str]]:
     entries: list[ManifestEntry] = []
     errors: list[str] = []
@@ -77,7 +78,8 @@ def build_manifest(
 
     for path in sorted(iter_files(root, exclude_dirs)):
         if extensions is not None and path.suffix.lower() not in extensions:
-            continue
+            if not (include_no_ext and path.suffix == ""):
+                continue
         rel_path = path.relative_to(root).as_posix()
         try:
             size = path.stat().st_size
@@ -196,6 +198,7 @@ def run_manifest(args: argparse.Namespace) -> int:
             exclude_dirs=exclude_dirs,
             prefer_openssl=args.openssl,
             strict=args.strict,
+            include_no_ext=args.include_no_ext,
         )
     except Exception as exc:  # noqa: BLE001 - CLI should surface any manifest errors
         print(f"[ERRO] Falha ao gerar manifesto: {exc}")
@@ -247,6 +250,11 @@ def build_parser() -> argparse.ArgumentParser:
     manifest.add_argument(
         "--ext",
         help="Extensões filtradas (ex.: .c,.h,.py). Se omitido, inclui tudo.",
+    )
+    manifest.add_argument(
+        "--include-no-ext",
+        action="store_true",
+        help="Inclui arquivos sem extensão quando --ext estiver ativo.",
     )
     manifest.add_argument(
         "--exclude-dir",
