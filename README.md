@@ -8,7 +8,8 @@ O projeto **GAIA-Ω** organiza um ecossistema experimental em C e Python voltado
 - [GAIA_phi como framework experimental — roteiro reproduzível](docs/ROTEIRO_EXPERIMENTAL_GAIA_CORE.md)
 - [Árvore estrutural de arquivos (inventário completo)](docs/ARVORE_ESTRUTURAL.md)
 - [Análise de oportunidades, operações e inovações](docs/ANALISE_OPORTUNIDADES_OPERACOES.md)
-- [GAIA‑Φ — Manifesto Técnico e Arquitetural (porta de entrada)](docs/GAIA_PHI_MANIFESTO_TECNICO.md)
+- [GAIA-Φ — Manifesto Técnico e Arquitetural (porta de entrada)](docs/GAIA_PHI_MANIFESTO_TECNICO.md)
+- [Guia de ligações e uso (pontos interligados)](docs/GUIA_LIGACOES_E_USO.md)
 
 ---
 
@@ -46,6 +47,11 @@ pkg install -y python clang make openssl
 python3 gaia_core.py manifest --root . --ext .c,.h,.py --format json,jsonl,md --out-dir ./gaia_core_manifest --openssl
 ```
 
+Para incluir arquivos sem extensão durante o filtro por extensão:
+```bash
+python3 gaia_core.py manifest --root . --ext .c,.h,.py,.md --include-no-ext --format json,jsonl,md
+```
+
 ### Modo dry-run (não grava arquivos)
 ```bash
 python3 gaia_core.py manifest --root . --ext .c,.h --dry-run
@@ -72,6 +78,7 @@ BASE_DIR="$PWD/gaia_omega_build" bash build_raf_log.sh
 manifest
   --root        Diretório raiz para varredura (default: diretório atual)
   --ext         Extensões filtradas (ex.: .c,.h,.py). Se omitido, inclui tudo
+  --include-no-ext Inclui arquivos sem extensão quando --ext estiver ativo
   --exclude-dir Diretórios excluídos (pode repetir)
   --format      json,jsonl,md (default: todos)
   --out-dir     Diretório de saída (default: ./gaia_core_manifest)
