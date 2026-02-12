@@ -51,6 +51,7 @@ Com READMEs distribuídos por diretório, a manutenção passa a ser **navegáve
 - [`core/`](core/README.md) — índice/snapshot determinístico do repositório.
 - [`dados/`](dados/README.md) — sandbox técnico com fontes C/Python, scripts e artefatos.
 - [`docs/`](docs/README.md) — corpus documental analítico e institucional.
+- [`docs/LEVANTAMENTO_ESTRUTURAL_TOTAL.md`](docs/LEVANTAMENTO_ESTRUTURAL_TOTAL.md) — levantamento total, com mapa de 5 níveis e descrição arquivo a arquivo.
 - [`gaia_core_v2/`](gaia_core_v2/README.md) — núcleo C modular (headers + implementações).
 - [`gaia_engines_v2/`](gaia_engines_v2/README.md) — motores RAF de execução simbólica.
 - [`llama_guard/`](llama_guard/README.md) — guard rails semânticos e integração de segurança.
@@ -100,10 +101,11 @@ Objetivo: governança técnica e leitura institucional de longo prazo.
 ## Fluxo recomendado de leitura (formal)
 1. Leia este README (visão institucional).
 2. Leia `docs/README.md` (mapa documental).
-3. Entre em `gaia_core_v2/README.md` e `gaia_engines_v2/README.md` (núcleo executável).
-4. Consulte `llama_guard/README.md` (camada de segurança).
-5. Use `tests/README.md` para reproduzir validações.
-6. Navegue `dados/README.md` para contexto de laboratório e artefatos.
+3. Leia `docs/LEVANTAMENTO_ESTRUTURAL_TOTAL.md` (mapa 5 níveis + arquivo a arquivo).
+4. Entre em `gaia_core_v2/README.md` e `gaia_engines_v2/README.md` (núcleo executável).
+5. Consulte `llama_guard/README.md` (camada de segurança).
+6. Use `tests/README.md` para reproduzir validações.
+7. Navegue `dados/README.md` para contexto de laboratório e artefatos.
 
 ---
 
