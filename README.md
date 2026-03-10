@@ -111,8 +111,20 @@ Objetivo: governança técnica e leitura institucional de longo prazo.
 
 ## Execução rápida
 ```bash
+make test
 bash tests/run_tests.sh
 python3 gaia_core.py manifest --root . --format json,jsonl,md --out-dir ./gaia_core_manifest
+```
+
+## Build unificado (host e Android/NDK)
+```bash
+cmake -S . -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo
+cmake --build build --parallel
+ctest --test-dir build --output-on-failure
+
+# Android (requer ANDROID_NDK_HOME)
+make android-configure
+cmake --build build-android --parallel
 ```
 
 ---
