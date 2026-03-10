@@ -16,6 +16,7 @@ import sys
 import json
 import time
 import math
+import argparse
 import shutil
 import logging
 import hashlib
@@ -40,6 +41,9 @@ CONFIG = {
     "SUB_DIRS": ["a_processar", "processando", "processado", "erro", "sub"],
     "VECTOR_DIM": 1024,                 # Hipervetor
     "MAX_BUFFER": 1024 * 1024 * 16,     # 16MB por chunk
+    "JSON_BATCH_SIZE": 256,
+    "JSON_BATCH_SIZE_MAX": 2048,
+    "DISK_LATENCY_HIGH_MS": 25.0,
 }
 
 # ---------------------------------------------------------------------------
@@ -119,6 +123,20 @@ class SynapticMemory:
                 f.write(json.dumps(asdict(unit), ensure_ascii=False) + "\n")
         except Exception as e:
             logger.error(f"[MEM] Save error: {e}")
+
+    def save_units(self, units: List[MemoryUnit]) -> float:
+        if not units:
+            return 0.0
+        self.memory.extend(units)
+        t0 = time.perf_counter()
+        try:
+            with open(self.db_path, "a", encoding="utf-8") as f:
+                lines = [json.dumps(asdict(unit), ensure_ascii=False) + "\n" for unit in units]
+                f.writelines(lines)
+            return (time.perf_counter() - t0) * 1000.0
+        except Exception as e:
+            logger.error(f"[MEM] Save batch error: {e}")
+            return 0.0
 
     def query(self, query_vec: array, top_k: int = 3) -> List[Tuple[MemoryUnit, float]]:
         res: List[Tuple[MemoryUnit, float]] = []
@@ -256,6 +274,26 @@ class RafaeliaOrchestrator:
         self.memory = SynapticMemory(db_path=mem_path)
         logger.info("RAFAELIA HYPER CORE v27 inicializado.")
 
+    @staticmethod
+    def _build_deterministic_seed(source_name: str, index: int, obj: Any, content_str: str) -> str:
+        if isinstance(obj, dict):
+            essential_payload = {
+                "source": source_name,
+                "index": index,
+                "keys": sorted(obj.keys()),
+                "id": obj.get("id"),
+                "type": obj.get("type"),
+            }
+            encoded = json.dumps(essential_payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+        else:
+            essential_payload = {
+                "source": source_name,
+                "index": index,
+                "preview": content_str[:256],
+            }
+            encoded = json.dumps(essential_payload, ensure_ascii=False, separators=(",", ":")).encode("utf-8")
+        return hashlib.sha256(encoded).hexdigest()
+
     def process_file(self, filepath: Path) -> None:
         logger.info(f"[PROC] Iniciando processamento: {filepath.name}")
         processing_path = self.dirs.move_to_state(filepath, "processando")
@@ -265,9 +303,30 @@ class RafaeliaOrchestrator:
             # JSON / JSONL
             if ext in [".json", ".jsonl"]:
                 count = 0
+                batch_size = int(CONFIG.get("JSON_BATCH_SIZE", 256))
+                batch_size_max = int(CONFIG.get("JSON_BATCH_SIZE_MAX", max(batch_size, 256)))
+                latency_high_ms = float(CONFIG.get("DISK_LATENCY_HIGH_MS", 25.0))
+                pending_units: List[MemoryUnit] = []
+                bytes_processed = 0
+                ingest_started = time.perf_counter()
+
+                def flush_batch() -> None:
+                    nonlocal batch_size
+                    nonlocal pending_units
+                    if not pending_units:
+                        return
+                    latency_ms = self.memory.save_units(pending_units)
+                    if latency_ms >= latency_high_ms and batch_size < batch_size_max:
+                        batch_size = min(batch_size * 2, batch_size_max)
+                        logger.info(
+                            f"[BACKPRESSURE] Disk latency {latency_ms:.2f}ms, batch ajustado para {batch_size}"
+                        )
+                    pending_units = []
+
                 for obj in MassiveFileHandler.stream_json_objects(processing_path):
-                    content_str = json.dumps(obj, sort_keys=True, ensure_ascii=False)
-                    vec = HyperVectorMath.generate_orthogonal(content_str, CONFIG["VECTOR_DIM"])
+                    content_str = json.dumps(obj, ensure_ascii=False, separators=(",", ":"))
+                    seed = self._build_deterministic_seed(processing_path.name, count, obj, content_str)
+                    vec = HyperVectorMath.generate_orthogonal(seed, CONFIG["VECTOR_DIM"])
                     unit = MemoryUnit(
                         id=f"{processing_path.name}_{count}",
                         type="json_obj",
@@ -278,10 +337,18 @@ class RafaeliaOrchestrator:
                         },
                         timestamp=datetime.now(timezone.utc).isoformat()
                     )
-                    self.memory.save_unit(unit)
+                    pending_units.append(unit)
                     count += 1
+                    bytes_processed += len(content_str.encode("utf-8"))
+                    if len(pending_units) >= batch_size:
+                        flush_batch()
                     if count % 1000 == 0:
-                        logger.info(f"[PROC] {count} objetos absorvidos de {processing_path.name}")
+                        elapsed = max(time.perf_counter() - ingest_started, 1e-9)
+                        throughput_mb = (bytes_processed / (1024 * 1024)) / elapsed
+                        logger.info(
+                            f"[PROC] {count} objetos | {bytes_processed} bytes | {throughput_mb:.2f} MB/s de {processing_path.name}"
+                        )
+                flush_batch()
                 logger.info(f"[PROC] Total JSON absorvido: {count} objetos.")
                 success = True
             # IMAGEM
@@ -343,6 +410,28 @@ def main() -> None:
     print("JSON 1GB+ (stream) | Imagem por bytes | Vetor->Vetor")
     print("Pasta: aprendizado/a_processar -> processado/erro")
     print("==================================================")
+    parser = argparse.ArgumentParser(add_help=True)
+    parser.add_argument(
+        "--vector-dim",
+        type=int,
+        default=None,
+        help="Dimensão do hipervetor (sobrescreve CONFIG e RAFAELIA_VECTOR_DIM).",
+    )
+    args, _ = parser.parse_known_args()
+
+    env_vector_dim = os.getenv("RAFAELIA_VECTOR_DIM")
+    selected_vector_dim = args.vector_dim
+    if selected_vector_dim is None and env_vector_dim:
+        try:
+            selected_vector_dim = int(env_vector_dim)
+        except ValueError:
+            logger.warning(f"RAFAELIA_VECTOR_DIM inválido: {env_vector_dim}")
+    if selected_vector_dim is not None:
+        if selected_vector_dim <= 0:
+            raise ValueError("--vector-dim deve ser > 0")
+        CONFIG["VECTOR_DIM"] = selected_vector_dim
+        logger.info(f"VECTOR_DIM configurado para {CONFIG['VECTOR_DIM']}")
+
     bot = RafaeliaOrchestrator()
     import threading
 
