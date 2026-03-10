@@ -128,55 +128,136 @@ class MassiveFileHandler:
         try:
             with open(filepath, 'r', encoding='utf-8') as f:
                 # Tenta detectar se é JSONL (Linha a linha)
-                first_char = f.read(1)
+                first_non_ws = ""
+                while True:
+                    ch = f.read(1)
+                    if not ch:
+                        break
+                    if not ch.isspace():
+                        first_non_ws = ch
+                        break
                 f.seek(0)
                 
-                if first_char == '{': 
+                if first_non_ws == '{': 
                     # Assumimos JSONL
-                    for line in f:
+                    for line_num, line in enumerate(f, start=1):
                         line = line.strip()
                         if line:
                             try:
                                 yield json.loads(line)
-                            except json.JSONDecodeError:
-                                logger.warning(f"Skipping invalid JSONL line in {filepath}")
+                            except json.JSONDecodeError as e:
+                                logger.warning(
+                                    f"Skipping invalid JSONL line in {filepath} "
+                                    f"at line={line_num}, col={e.colno}, pos={e.pos}"
+                                )
                 
-                elif first_char == '[':
+                elif first_non_ws == '[':
                     # JSON Array Gigante - Modo Streaming Manual
-                    # Nota: Implementação simplificada de streaming. 
-                    # Para produção robusta sem libs externas (ijson), usamos buffer.
-                    # Esta é uma implementação "Hardcoder" de parser de stream.
+                    # Parsing incremental com raw_decode + descarte de prefixo processado.
+                    decoder = json.JSONDecoder()
                     buffer = ""
-                    depth = 0
-                    in_string = False
-                    escape = False
+                    offset = 0
+                    array_opened = False
+                    array_closed = False
+                    eof = False
                     
                     while True:
-                        chunk = f.read(CONFIG["MAX_BUFFER"])
-                        if not chunk: break
-                        
-                        for char in chunk:
-                            buffer += char
-                            
-                            if not in_string:
-                                if char == '{': depth += 1
-                                elif char == '}': depth -= 1
-                                elif char == '"': in_string = True
+                        if not eof:
+                            chunk = f.read(CONFIG["MAX_BUFFER"])
+                            if chunk:
+                                buffer += chunk
                             else:
-                                if not escape and char == '"': in_string = False
-                                escape = (char == '\\' and not escape)
+                                eof = True
 
-                            # Se depth voltou a 0 e temos conteúdo, é um objeto completo (dentro do array)
-                            if depth == 0 and char == '}' and buffer.strip() != "":
-                                # Tenta limpar virgulas anteriores/posteriores
-                                try:
-                                    clean_json = buffer.strip().lstrip(',').rstrip(',')
-                                    yield json.loads(clean_json)
-                                    buffer = ""
-                                except: pass # Buffer sujo, continua
+                        idx = 0
+                        parsed_any = False
+
+                        while idx < len(buffer):
+                            while idx < len(buffer) and buffer[idx].isspace():
+                                idx += 1
+
+                            if idx >= len(buffer):
+                                break
+
+                            char = buffer[idx]
+
+                            if not array_opened:
+                                if char == '[':
+                                    array_opened = True
+                                    idx += 1
+                                    continue
+                                logger.error(
+                                    f"Formato inválido em {filepath}: esperado '[' em offset={offset + idx}"
+                                )
+                                return
+
+                            if char == ',':
+                                idx += 1
+                                continue
+
+                            if char == ']':
+                                array_closed = True
+                                idx += 1
+                                continue
+
+                            if array_closed:
+                                if char.isspace():
+                                    idx += 1
+                                    continue
+                                logger.error(
+                                    f"Dados extras após fechamento do array em {filepath} "
+                                    f"offset={offset + idx}"
+                                )
+                                return
+
+                            try:
+                                obj, next_idx = decoder.raw_decode(buffer, idx)
+                                yield obj
+                                idx = next_idx
+                                parsed_any = True
+                            except json.JSONDecodeError as e:
+                                # Buffer incompleto: aguarda próximo chunk
+                                if not eof and e.pos >= len(buffer) - 1:
+                                    break
+
+                                abs_pos = offset + e.pos
+                                start = max(0, e.pos - 40)
+                                end = min(len(buffer), e.pos + 40)
+                                context = buffer[start:end].replace("\n", "\\n")
+                                logger.error(
+                                    f"Erro de parse JSON em {filepath} "
+                                    f"offset={abs_pos}, rel_pos={e.pos}, context='{context}'"
+                                )
+                                # tenta avançar para não travar em caso de dado inválido
+                                idx = max(idx + 1, e.pos + 1)
+
+                        if idx > 0:
+                            buffer = buffer[idx:]
+                            offset += idx
+
+                        if eof:
+                            if not array_opened:
+                                logger.error(f"Array JSON vazio/inválido em {filepath}")
+                            elif not array_closed:
+                                logger.error(
+                                    f"Fim de arquivo antes do fechamento do array em {filepath} "
+                                    f"offset={offset}"
+                                )
+                            break
+
+                        if not parsed_any and not buffer:
+                            continue
+
+                        if not parsed_any and len(buffer) > CONFIG["MAX_BUFFER"] * 4:
+                            # Segurança para evitar crescimento de buffer em arquivo corrompido
+                            logger.error(
+                                f"Buffer excedeu limite seguro em {filepath} "
+                                f"(offset={offset}, size={len(buffer)})"
+                            )
+                            break
                                 
                 else:
-                    logger.error(f"Formato desconhecido ou não suportado: {first_char}")
+                    logger.error(f"Formato desconhecido ou não suportado: {first_non_ws}")
 
         except Exception as e:
             logger.error(f"Erro no streaming de {filepath}: {e}")
