@@ -15,6 +15,7 @@ import sys
 import json
 import time
 import math
+import heapq
 import shutil
 import logging
 import hashlib
@@ -84,30 +85,70 @@ class SynapticMemory:
     """Memória Associativa Persistente (JSONL Atômico)"""
     def __init__(self, db_path="sub/synaptic_memory.jsonl"):
         self.db_path = db_path
-        self.memory: List[MemoryUnit] = []
         self._load()
     
     def _load(self):
-        if os.path.exists(self.db_path):
-            with open(self.db_path, 'r', encoding='utf-8') as f:
-                for line in f:
-                    try:
-                        data = json.loads(line)
-                        self.memory.append(MemoryUnit(**data))
-                    except: pass
+        # Modelo append-only: não carrega histórico em RAM.
+        db_dir = os.path.dirname(self.db_path)
+        if db_dir:
+            os.makedirs(db_dir, exist_ok=True)
+        if not os.path.exists(self.db_path):
+            with open(self.db_path, 'a', encoding='utf-8'):
+                pass
+
+    @staticmethod
+    def _unit_from_data(data: Dict[str, Any]) -> MemoryUnit:
+        """Normaliza registros legados para garantir compatibilidade retroativa."""
+        unit_id = str(data.get('id', 'legacy_unit'))
+        unit_type = str(data.get('type', data.get('content_type', 'unknown')))
+        vector = data.get('vector', [])
+        if not isinstance(vector, list):
+            vector = []
+        metadata = data.get('metadata', {})
+        if not isinstance(metadata, dict):
+            metadata = {'raw_metadata': metadata}
+        timestamp = str(data.get('timestamp', datetime.now(timezone.utc).isoformat()))
+        return MemoryUnit(
+            id=unit_id,
+            type=unit_type,
+            vector=vector,
+            metadata=metadata,
+            timestamp=timestamp
+        )
 
     def save_unit(self, unit: MemoryUnit):
-        self.memory.append(unit)
         with open(self.db_path, 'a', encoding='utf-8') as f:
             f.write(json.dumps(asdict(unit)) + "\n")
 
     def query(self, query_vec: array, top_k=3) -> List[Tuple[MemoryUnit, float]]:
-        """Busca semântica vetor -> vetor"""
-        results = []
-        for unit in self.memory:
-            score = HyperVectorMath.cosine_similarity(query_vec, array('d', unit.vector))
-            results.append((unit, score))
-        return sorted(results, key=lambda x: x[1], reverse=True)[:top_k]
+        """Busca semântica vetor -> vetor em modo streaming com heap fixo O(k)."""
+        if top_k <= 0:
+            return []
+
+        top_heap: List[Tuple[float, MemoryUnit]] = []
+        if not os.path.exists(self.db_path):
+            return []
+
+        with open(self.db_path, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+
+                try:
+                    data = json.loads(line)
+                    unit = self._unit_from_data(data)
+                    score = HyperVectorMath.cosine_similarity(query_vec, array('d', unit.vector))
+                except Exception:
+                    continue
+
+                if len(top_heap) < top_k:
+                    heapq.heappush(top_heap, (score, unit))
+                elif score > top_heap[0][0]:
+                    heapq.heapreplace(top_heap, (score, unit))
+
+        ranked = sorted(top_heap, key=lambda x: x[0], reverse=True)
+        return [(unit, score) for score, unit in ranked]
 
 # ---------------------------------------------------------------------------
 # 3. STREAMING DE DADOS MASSIVOS (1GB+ Support)
@@ -245,7 +286,7 @@ class MassiveFileHandler:
                                     obj_buffer = ""
 
                 else:
-                    logger.error(f"Formato desconhecido ou não suportado: {first_char}")
+                    logger.error(f"Formato desconhecido ou não suportado: {first_non_ws}")
 
         except Exception as e:
             logger.error(f"Erro no streaming de {filepath}: {e}")
