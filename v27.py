@@ -127,54 +127,123 @@ class MassiveFileHandler:
         """
         try:
             with open(filepath, 'r', encoding='utf-8') as f:
-                # Tenta detectar se é JSONL (Linha a linha)
-                first_char = f.read(1)
-                f.seek(0)
-                
-                if first_char == '{': 
-                    # Assumimos JSONL
-                    for line in f:
-                        line = line.strip()
-                        if line:
+                # Detecta primeiro token JSON real ignorando whitespace inicial.
+                first_char = ''
+                first_char_pos = 0
+                while True:
+                    c = f.read(1)
+                    if not c:
+                        break
+                    if not c.isspace():
+                        first_char = c
+                        first_char_pos = f.tell() - 1
+                        break
+
+                if first_char == '{':
+                    # Tenta parse incremental de objeto único.
+                    f.seek(first_char_pos)
+                    decoder = json.JSONDecoder()
+                    buffer = ""
+                    parsed_obj = None
+                    parsed_idx = None
+
+                    while True:
+                        chunk = f.read(CONFIG["MAX_BUFFER"])
+                        if not chunk:
+                            break
+                        buffer += chunk
+                        try:
+                            parsed_obj, parsed_idx = decoder.raw_decode(buffer)
+                            break
+                        except json.JSONDecodeError:
+                            continue
+
+                    if parsed_obj is not None:
+                        trailing = buffer[parsed_idx:] + f.read()
+                        if trailing.strip() == "":
+                            if isinstance(parsed_obj, dict):
+                                yield parsed_obj
+                            else:
+                                logger.error(f"JSON raiz não é objeto em {filepath}: {type(parsed_obj).__name__}")
+                        else:
+                            # Conteúdo extra após primeiro objeto: trata como JSONL.
+                            f.seek(0)
+                            for line_no, line in enumerate(f, start=1):
+                                line = line.strip()
+                                if not line:
+                                    continue
+                                try:
+                                    yield json.loads(line)
+                                except json.JSONDecodeError as err:
+                                    logger.warning(f"JSONL inválido em {filepath}:{line_no}: {err}")
+                    else:
+                        # Não foi possível formar objeto único; fallback JSONL linha a linha.
+                        f.seek(0)
+                        for line_no, line in enumerate(f, start=1):
+                            line = line.strip()
+                            if not line:
+                                continue
                             try:
                                 yield json.loads(line)
-                            except json.JSONDecodeError:
-                                logger.warning(f"Skipping invalid JSONL line in {filepath}")
-                
+                            except json.JSONDecodeError as err:
+                                logger.warning(f"JSONL inválido em {filepath}:{line_no}: {err}")
+
                 elif first_char == '[':
-                    # JSON Array Gigante - Modo Streaming Manual
-                    # Nota: Implementação simplificada de streaming. 
-                    # Para produção robusta sem libs externas (ijson), usamos buffer.
-                    # Esta é uma implementação "Hardcoder" de parser de stream.
-                    buffer = ""
+                    # JSON Array Gigante - parser incremental de objetos no array.
+                    f.seek(first_char_pos + 1)  # pula '['
+
+                    collecting = False
+                    obj_buffer = ""
                     depth = 0
                     in_string = False
                     escape = False
-                    
+
                     while True:
                         chunk = f.read(CONFIG["MAX_BUFFER"])
-                        if not chunk: break
-                        
-                        for char in chunk:
-                            buffer += char
-                            
-                            if not in_string:
-                                if char == '{': depth += 1
-                                elif char == '}': depth -= 1
-                                elif char == '"': in_string = True
-                            else:
-                                if not escape and char == '"': in_string = False
-                                escape = (char == '\\' and not escape)
+                        if not chunk:
+                            break
 
-                            # Se depth voltou a 0 e temos conteúdo, é um objeto completo (dentro do array)
-                            if depth == 0 and char == '}' and buffer.strip() != "":
-                                # Tenta limpar virgulas anteriores/posteriores
-                                try:
-                                    clean_json = buffer.strip().lstrip(',').rstrip(',')
-                                    yield json.loads(clean_json)
-                                    buffer = ""
-                                except: pass # Buffer sujo, continua
-                                
+                        for char in chunk:
+                            if not collecting:
+                                if char == '{':
+                                    collecting = True
+                                    obj_buffer = "{"
+                                    depth = 1
+                                    in_string = False
+                                    escape = False
+                                elif char == ']':
+                                    return
+                                else:
+                                    # Ignora whitespace, vírgulas e qualquer separador fora de objeto.
+                                    continue
+                            else:
+                                obj_buffer += char
+
+                                if in_string:
+                                    if not escape and char == '"':
+                                        in_string = False
+                                    escape = (char == '\\' and not escape)
+                                    continue
+
+                                if char == '"':
+                                    in_string = True
+                                elif char in '{[':
+                                    depth += 1
+                                elif char in '}]':
+                                    depth -= 1
+
+                                if depth == 0:
+                                    try:
+                                        parsed = json.loads(obj_buffer)
+                                        if isinstance(parsed, dict):
+                                            yield parsed
+                                        else:
+                                            logger.error(f"Elemento do array não é objeto em {filepath}: {type(parsed).__name__}")
+                                    except json.JSONDecodeError as err:
+                                        logger.warning(f"Objeto inválido no array JSON em {filepath}: {err}")
+                                    collecting = False
+                                    obj_buffer = ""
+
                 else:
                     logger.error(f"Formato desconhecido ou não suportado: {first_char}")
 
