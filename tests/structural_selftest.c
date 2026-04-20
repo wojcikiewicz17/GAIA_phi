@@ -2,6 +2,7 @@
 #include <string.h>
 
 #include "gaia_hash.h"
+#include "gaia_asm_core.h"
 #include "gaia_projection.h"
 #include "gaia_vector.h"
 #include "raf_engine.h"
@@ -43,6 +44,15 @@ int main(void) {
     if (gaia_vector_project_hash(&vec, h) != GAIA_OK) {
         fprintf(stderr, "vector projection failure\n");
         return 1;
+    }
+
+    {
+        uint32_t mixed_asm = gaia_asm_mix_u32(0x12345678u, 0x0badf00du, 0x11111111u);
+        uint32_t mixed_ref = gaia_asm_mix_u32_ref(0x12345678u, 0x0badf00du, 0x11111111u);
+        if (mixed_asm != mixed_ref) {
+            fprintf(stderr, "asm core mismatch (%u != %u)\n", mixed_asm, mixed_ref);
+            return 1;
+        }
     }
 
     {
