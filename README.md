@@ -51,6 +51,7 @@ Com READMEs distribuídos por diretório, a manutenção passa a ser **navegáve
 - [`core/`](core/README.md) — índice/snapshot determinístico do repositório.
 - [`dados/`](dados/README.md) — sandbox técnico com fontes C/Python, scripts e artefatos.
 - [`docs/`](docs/README.md) — corpus documental analítico e institucional.
+- [`docs/ASM_NATIVE_PIPELINE.md`](docs/ASM_NATIVE_PIPELINE.md) — pipeline de assembly puro multi-arquitetura e CI.
 - [`docs/LEVANTAMENTO_ESTRUTURAL_TOTAL.md`](docs/LEVANTAMENTO_ESTRUTURAL_TOTAL.md) — levantamento total, com mapa de 5 níveis e descrição arquivo a arquivo.
 - [`gaia_core_v2/`](gaia_core_v2/README.md) — núcleo C modular (headers + implementações).
 - [`gaia_engines_v2/`](gaia_engines_v2/README.md) — motores RAF de execução simbólica.
@@ -125,6 +126,9 @@ ctest --test-dir build --output-on-failure
 # Android (requer ANDROID_NDK_HOME)
 make android-configure
 cmake --build build-android --parallel
+
+# Manifesto ASM (registradores/endereçamentos autoidentificados)
+cmake --build build --target asm_manifest
 ```
 
 ---

@@ -19,8 +19,24 @@ jobs:
       - name: Run CTest
         run: ctest --test-dir build --output-on-failure
 
-  android-ndk-configure:
+      - name: Generate ASM manifest
+        run: cmake --build build --target asm_manifest
+
+      - name: Upload host artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: host-build-artifacts
+          path: |
+            build/structural_selftest
+            build/smart_guard_cli
+            build/asm/manifest.json
+
+  android-ndk-build:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        abi: [arm64-v8a, armeabi-v7a, x86_64]
     steps:
       - uses: actions/checkout@v4
       - name: Setup Android NDK
@@ -32,7 +48,19 @@ jobs:
           cmake -S . -B build-android \
             -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_TOOLCHAIN_FILE="$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake" \
-            -DANDROID_ABI=arm64-v8a \
+            -DANDROID_ABI=${{ matrix.abi }} \
             -DANDROID_PLATFORM=21
       - name: Build Android static targets
         run: cmake --build build-android --parallel
+      - name: Generate ASM manifest
+        run: cmake --build build-android --target asm_manifest
+      - name: Upload Android artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-${{ matrix.abi }}-artifacts
+          path: |
+            build-android/libgaia_asm_core.a
+            build-android/libgaia_core_v2.a
+            build-android/libgaia_engines_v2.a
+            build-android/libllama_guard.a
+            build-android/asm/manifest.json

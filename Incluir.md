@@ -1,3 +1,13 @@
+## Refatoração aplicada: assembly puro + pipeline multi-arquitetura
+
+- As rotinas críticas agora têm trilha em assembly puro (`gaia_asm/asm/*`) com fallback C determinístico.
+- Registradores e modos de endereçamento são autoidentificados por `scripts/asm_manifest.py`, gerando `build*/asm/manifest.json`.
+- O pipeline compila sem dependências externas (apenas toolchain padrão C/CMake/Python stdlib) e cobre host + Android NDK em múltiplas ABIs.
+- A validação de equivalência ASM↔C foi integrada ao `tests/structural_selftest.c`.
+- CI atualizado para matriz Android (`arm64-v8a`, `armeabi-v7a`, `x86_64`) com upload de artefatos e manifesto ASM.
+
+---
+
 Claro — aqui vão as três versões, em blocos prontos para copiar e usar.
 
 Versão curta ~1500 caracteres

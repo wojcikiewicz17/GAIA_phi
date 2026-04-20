@@ -11,6 +11,7 @@
 - `GAIA_PHI_MANIFESTO_TECNICO.md`: arquitetura e visão institucional.
 - `RELEASES_59X.md`: histórico de evolução por ciclos.
 - `LEVANTAMENTO_ESTRUTURAL_TOTAL.md`: inventário integral (arquivo a arquivo) com mapa de 5 níveis.
+- `ASM_NATIVE_PIPELINE.md`: pipeline nativo em assembly puro com matriz multi-ABI e manifesto automático.
 - Manifestos interdisciplinares (`MANIFESTO_*.md`) e guia de ligações (`GUIA_LIGACOES_E_USO.md`).
 
 ## Conceitos principais
