@@ -11,7 +11,7 @@ Este README consolida, em formato de dissertação analítica, os documentos que
 - O projeto adota uma estratégia de **determinismo operacional**: varredura ordenada, hashing reproduzível e saídas auditáveis.
 - A base C concentra componentes de **baixo overhead** (hash, vecdb, mmap, zipraf, guardas de segurança).
 - A base Python opera como **orquestração e metadocumentação** (manifestos, compilação de dataset, automações experimentais).
-- A pasta `docs/` formaliza o estado da arte local: auditoria, oportunidades, roteiro experimental, manifesto técnico e árvore estrutural.
+- As pastas `docs/` e `gaia_asm/` formalizam, respectivamente, a governança documental e o pipeline nativo ASM/C para build multiplataforma.
 
 ---
 
@@ -36,6 +36,7 @@ O projeto passa a ser lido como um sistema com fronteiras claras:
 - `tests/`: validação do CLI e fixtures determinísticas.
 - `dados/`: laboratório expandido com fontes, scripts e artefatos operacionais.
 - `docs/`: base de governança técnico-científica.
+- `gaia_asm/`: pipeline nativo ASM/C com headers dedicados e build separado.
 
 ### 4) Implicação técnica
 Com READMEs distribuídos por diretório, a manutenção passa a ser **navegável, auditável e escalável**:
@@ -53,6 +54,8 @@ Com READMEs distribuídos por diretório, a manutenção passa a ser **navegáve
 - [`docs/`](docs/README.md) — corpus documental analítico e institucional.
 - [`docs/ASM_NATIVE_PIPELINE.md`](docs/ASM_NATIVE_PIPELINE.md) — pipeline de assembly puro multi-arquitetura e CI.
 - [`docs/LEVANTAMENTO_ESTRUTURAL_TOTAL.md`](docs/LEVANTAMENTO_ESTRUTURAL_TOTAL.md) — levantamento total, com mapa de 5 níveis e descrição arquivo a arquivo.
+- [`gaia_asm/`](gaia_asm/README.md) — pipeline ASM/C nativo com fontes em `asm/`, `src/` e `include/`.
+- [`.github/workflows/`](.github/workflows/) — fluxos CI para build, testes e validação automatizada.
 - [`gaia_core_v2/`](gaia_core_v2/README.md) — núcleo C modular (headers + implementações).
 - [`gaia_engines_v2/`](gaia_engines_v2/README.md) — motores RAF de execução simbólica.
 - [`llama_guard/`](llama_guard/README.md) — guard rails semânticos e integração de segurança.
@@ -93,6 +96,14 @@ Objetivo: garantir determinismo e prevenir regressão funcional básica.
 Funções centrais: laboratório de expansão (prototipagem, scripts auxiliares, datasets e binários experimentais).  
 Objetivo: acelerar experimentos sem bloquear evolução dos módulos formais.
 
+### `gaia_asm/`
+Funções centrais: reunir código ASM/C de baixo nível, headers de integração e targets dedicados de compilação.  
+Objetivo: garantir trilha nativa independente para validação de desempenho e portabilidade.
+
+### `.github/workflows/`
+Funções centrais: orquestrar CI (build, teste, validações e publicação de artefatos).  
+Objetivo: alinhar execução local com validação contínua reproduzível no GitHub Actions.
+
 ### `docs/`
 Funções centrais: consolidar método, auditoria, roadmap e estado da arte do projeto.  
 Objetivo: governança técnica e leitura institucional de longo prazo.
@@ -107,6 +118,8 @@ Objetivo: governança técnica e leitura institucional de longo prazo.
 5. Consulte `llama_guard/README.md` (camada de segurança).
 6. Use `tests/README.md` para reproduzir validações.
 7. Navegue `dados/README.md` para contexto de laboratório e artefatos.
+8. Consulte `gaia_asm/README.md` para trilha de build ASM/C e integração nativa.
+9. Revise `.github/workflows/` para a cadeia de CI e validações automáticas.
 
 ---
 
