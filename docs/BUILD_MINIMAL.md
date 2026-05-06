@@ -22,10 +22,10 @@ Artefatos esperados no host:
 
 ## 2) Android NDK (somente ABIs obrigatórias)
 
-Pré-requisito: definir `ANDROID_NDK` para um NDK instalado.
+Pré-requisito: definir `ANDROID_NDK_HOME` para um NDK instalado.
 
 ```bash
-export ANDROID_NDK=/caminho/para/android-ndk
+export ANDROID_NDK_HOME=/caminho/para/android-ndk
 ```
 
 ### arm64-v8a
@@ -33,9 +33,9 @@ export ANDROID_NDK=/caminho/para/android-ndk
 ```bash
 cmake -S . -B build-android-arm64 \
   -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-  -DCMAKE_TOOLCHAIN_FILE="$ANDROID_NDK/build/cmake/android.toolchain.cmake" \
+  -DCMAKE_TOOLCHAIN_FILE="$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake" \
   -DANDROID_ABI=arm64-v8a \
-  -DANDROID_PLATFORM=android-24
+  -DANDROID_PLATFORM=android-21
 cmake --build build-android-arm64 --parallel
 ```
 
@@ -44,9 +44,9 @@ cmake --build build-android-arm64 --parallel
 ```bash
 cmake -S . -B build-android-armv7 \
   -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-  -DCMAKE_TOOLCHAIN_FILE="$ANDROID_NDK/build/cmake/android.toolchain.cmake" \
+  -DCMAKE_TOOLCHAIN_FILE="$ANDROID_NDK_HOME/build/cmake/android.toolchain.cmake" \
   -DANDROID_ABI=armeabi-v7a \
-  -DANDROID_PLATFORM=android-24
+  -DANDROID_PLATFORM=android-21
 cmake --build build-android-armv7 --parallel
 ```
 
